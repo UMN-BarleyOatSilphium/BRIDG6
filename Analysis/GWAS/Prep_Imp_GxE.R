@@ -1,4 +1,5 @@
-# Prep genos and phenos for mapping
+# Author: Alex Ollhoff
+# Description: Prep genos and phenos for mapping
 # genos: 
   # 1. Remove SNPs that were NA or Hete in Rasmusson
   # 2. Call genotypes respect to Rasmusson (0,2,1 and NA)
@@ -8,33 +9,41 @@
   # 6. Remove SNPs with MAF <0.05
   # The filtered imputed data for FILLIN has 6846 SNPs for 6033 samples.
 # phenos: BLUPs calculated across 3 environments with fam as fixed, line and env as random, GxE
-
+#######################################################################################################################################
+rm(list=ls())
 # load packages
 library(NAM)
 library(ggplot2)
 library(dplyr)
 
 # Format raw data files for processing
+# Import genotypes. SNPs are in rows, and samples are in collumns. Genotypes have been imputed.
 gen_raw <- read.table("~/Documents/PhD/NAM/NAM_mapping/Genotypes/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD.txt", header = T)
+# Turn table to have SNPs in columns and samples in rows
 gen_raw_t <- t(gen_raw)
-# Save for later use
+# Save genotypes for later use
 write.csv(gen_raw_t, "~/Documents/PhD/NAM/NAM_mapping/Genotypes/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv")
 
 # import files for processing
 # I manually added the population mean to the adjusted mean for each RIL (DAP: 56.44459, height: 70.11302757)
+# Import phenotypes
 y <- read.csv("~/Desktop/BRIDG6/Phenotypes/GxE/DAP_BLUPs_nob_no2_no19.csv", header=T)
+
+# Import genotypes. SNPs are in columns and samples in rows.
 gen <- read.csv("~/Documents/PhD/NAM/NAM_mapping/Genotypes/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv", header = T)
 
 # Recode genotypes so Ras = 2, diverse parent = 0
-Ras_based_recode <- function(dat){
-  dat[which(dat == "0")]<-"3"
-  dat[which(dat == "2")]<-"4"
-  dat[which(dat == "1")]<-"1"
-  dat[which(dat == "NA")]<-"NA"
-  return(dat)
-}
+#Ras_based_recode <- function(dat){
+#  dat[which(dat == "0")]<-"3"
+#  dat[which(dat == "2")]<-"4"
+#  dat[which(dat == "1")]<-"1"
+#  dat[which(dat == "NA")]<-"NA"
+#  return(dat)
+#}
 
-gen_recode <- as.data.frame(t(apply(gen, 1, Ras_based_recode)))
+#gen_recode <- as.data.frame(t(apply(gen, 1, Ras_based_recode)))
+
+gen_recode<- gen
 
 # See what I'm working with
 class(y)
