@@ -15,9 +15,9 @@
 #PBS    -r      n
 #PBS    -q mesabi
 
-cd /home/smithkp/agonzale/Projects/NAM/Scripts
-module load R/3.3.1 
-R CMD BATCH --slave Step2_Map_80miss_fillin_GxE.R
+#cd /home/smithkp/agonzale/Projects/NAM/Scripts
+#module load R/3.3.1 
+#R CMD BATCH --slave Step2_Map_80miss_fillin_GxE.R
 
 ##########################################################################
 
