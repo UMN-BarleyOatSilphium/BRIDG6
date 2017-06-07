@@ -1,6 +1,7 @@
 # Author: Alex Ollhoff
 # Description: Prep genos and phenos for mapping
-# genos: 
+# genos:
+  # It has been filtered using the following criteria:
   # 1. Remove SNPs that were NA or Hete in Rasmusson
   # 2. Call genotypes respect to Rasmusson (0,2,1 and NA)
   # 3. Remove SNPs missing more than 80% of data
