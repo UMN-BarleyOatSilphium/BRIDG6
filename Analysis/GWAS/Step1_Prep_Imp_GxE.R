@@ -19,11 +19,14 @@ library(dplyr)
 
 # Format raw data files for processing
 # Import genotypes. SNPs are in rows, and samples are in columns. Genotypes have been imputed. Genotypes coded based on Rasmusson = 2, diverse parent = 0, Heterozygous=1, missing=NA
-gen_raw <- read.table("~/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD.txt", header = T)
+#gen_rawX <- read.table("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD.txt", header = T)
+gen_raw <- read.table("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/Final_filt_LDKNNI_noMis_noNAHHras_rasBased_MAF5_noLD.txt", header = T)
+
 # Turn table to have SNPs in columns and samples in rows
 gen_raw_t <- t(gen_raw)
 # Save genotypes for later use
-write.csv(gen_raw_t, "~/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/Genotypes/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv")
+#write.csv(gen_raw_t, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/Genotypes/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv")
+write.csv(gen_raw_t, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/Genotypes/Final_filt_LDKNNI_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv")
 
 # import files for processing
 # I manually added the population mean to the adjusted mean for each RIL (DAP: 56.44459, height: 70.11302757)
@@ -31,7 +34,8 @@ write.csv(gen_raw_t, "~/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/I
 y <- read.csv("~/Dropbox/GITHUB/BRIDG6/Datasets/Phenotypes/DAP_BLUPs_nob_no2_no19.csv", header=T)
 
 # Import genotypes. SNPs are in columns and samples in rows.
-gen <- read.csv("~/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/Genotypes/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv", header = T)
+#gen <- read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/Genotypes/Final_filt_Fillin_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv", header = T)
+gen <- read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/Genotypes/Final_filt_LDKNNI_noMis_noNAHHras_rasBased_MAF5_noLD_t.csv", header = T)
 
 # See what I'm working with
 class(y)
@@ -70,7 +74,7 @@ adjusted_genotypes = snpQC( gen=gen_naked, MAF=0.05, impute=FALSE)
 rownames(adjusted_genotypes) = y_2$line_name
 dim(adjusted_genotypes)
 
-# 5141 individuals with 8101 markers
+# 5141 individuals with 8101 markers # with LDKKNI there were 5141 individuals and 8021 markers.
 
 # Look at the data a little before saving it for mapping
 
@@ -126,5 +130,7 @@ chr = data.frame(table(gsub("._.+$", "",colnames(adjusted_genotypes))))[,2]
 class(chr) # should be integer
 
 # Make file for MSI
-write.csv(adjusted_genotypes, "~/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/genos_fillin.csv")
-write.csv(y_2, "~/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/phenos_fillin.csv")
+#write.csv(adjusted_genotypes, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/genos_fillin.csv")
+write.csv(adjusted_genotypes, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/genos_LDKNNI.csv")
+#write.csv(y_2, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/phenos_fillin.csv")
+write.csv(y_2, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/phenos_LDKNNI.csv")
