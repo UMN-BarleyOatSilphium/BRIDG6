@@ -1,3 +1,4 @@
+# Physical position of barley SNP iSelect and BOPA chips
 The scripts used fot detection of Chip SNPs in the new
 genome reference can be found at the link below:
 
