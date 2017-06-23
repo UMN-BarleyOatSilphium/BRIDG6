@@ -107,9 +107,9 @@ write.csv(SNP_info_complete, "~/Documents/PhD/NAM/NAM_mapping/Imp_GxE/80miss_byf
 SNP_info_complete <- read.csv("~/Documents/PhD/NAM/NAM_mapping/Imp_GxE/80miss_byfam_SNP_info.csv", header = T)
 
 ###<<<*** Manhattan plot ***>>>###
-THR =  -log10(0.05 / ( ncol(RESULTS) * (1-0.05))) #*** Ana, these THR are different but I can't figure out why. They should be identical'
+THR =  -log10(0.05 / ( nrow(RESULTS) * (1-0.05))) #*** Ana, these THR are different but I can't figure out why. They should be identical'
 
-THR =  -log10(0.05 / ( ncol(SNP_info_complete) * (1-0.05)))
+#THR =  -log10(0.05 / ( ncol(SNP_info_complete) * (1-0.05)))
 w = which((SNP_info_complete$pval) > (-log10(THR)) )
 
 # Simple manhattan, manuscript version

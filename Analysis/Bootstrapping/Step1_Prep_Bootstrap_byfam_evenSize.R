@@ -1,35 +1,28 @@
-# Author: Alex Ollhoff
+# Author: Alex Ollhoff & Ana Poets
 # Description: Bootstrap sampling mapping panels for the BRIDG6
 ##############################################################################################
+rm(list=ls())
 
 # load package
 require(NAM)
+library(dplyr)
 
-# import files for processing
-y <- read.csv("~/Documents/PhD/NAM/BLUPs/fam_fixed/fam_BLUEs_nob_no19_famcorrect.csv", header=T)
-gen <- read.csv("~/Documents/PhD/NAM/NAM_mapping/Genotypes/NAM_MNS_July2016_DP5_GQ30_mis80_6060ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_rm100Close_naExcessHH_NAonlyHeteHomo_naMAF_imputed_naMAFagain.csv", header = T)
-LD <- read.table("~/Documents/PhD/NAM/NAM_mapping/Genotypes/List_SNPtoKeep_noLD80.txt")
+# import files for processing. Phenotype and Genotypes have been filtered after imputation of genotypes.
+# only samples with phenotypic and genotypic data are included. SNPs in LD >0.8 have been removed, and genotypes are 
+# coded based on Rasmusson allele.
+# Data set was generated using Step1_Prep_Imp_GxE.R
 
-# Add X so list matches column names in gen
-LD_X <- sub("^", "X", as.character(LD$V1))
+# import phenotypes
+y <- read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Input/phenos_LDKNNI.csv", header=T)
+# import genotypes
+gen_noLD <- read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Input/genos_LDKNNI.csv", header = T)
+#LD <- read.table("~/Documents/PhD/NAM/NAM_mapping/Genotypes/List_SNPtoKeep_noLD80.txt")
 
 # See what I'm working with
 class(y)
 class(gen)
 dim(y)
 dim(gen)
-
-# Filter for markers not in LD, this is going to give an error message but it's okay, it's just the markers with unknown location which are added in the next step
-gen_noLD <- select(gen, one_of(LD_X))
-
-# Add Unk markers 
-#gen_Unk <- select(gen, contains("UN"))
-
-# Combine markers not in LD and Unk
-#gen_noLD_Unk <- cbind(gen_noLD, gen_Unk)
-
-# Add line names back
-gen_noLD$X <- gen$X
 
 # Remove Ras from the first row
 gen_noRas <- gen_noLD[-1,]
@@ -55,31 +48,19 @@ adjusted_genotypes = snpQC( gen=gen_naked, MAF=0.05, impute=FALSE)
 rownames(adjusted_genotypes) = y_2$line_name
 dim(adjusted_genotypes)
 
-# 36,212 markers
+# 8,021 markers
 
 # getting chr
 chr = data.frame(table(gsub("._.+$", "",colnames(adjusted_genotypes))))[,2]
 class(chr)
 
 # Make file for MSI
-write.csv(adjusted_genotypes, "~/Documents/PhD/NAM/NAM_mapping/80miss_MAF05/genos_MAF05.csv")
-write.csv(y_2, "~/Documents/PhD/NAM/NAM_mapping/80miss_MAF05/phenos_MAF05.csv")
+write.csv(adjusted_genotypes, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forBoothstrapping/geno_pheno/genos_MAF05.csv")
+write.csv(y_2, "~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forBoothstrapping/geno_pheno/phenos_MAF05.csv")
+
 ### Prep loops for mapping below, then copy and edit in map_bootstrap script ###
-
-# write.csv(adjusted_genotypes, "~/Documents/PhD/NAM/NAM_mapping/80miss_byfam/genos_80miss_byfam.csv")
-# write.csv(y_2, "~/Documents/PhD/NAM/NAM_mapping/80miss_byfam/phenos_80miss_byfam.csv")
-
-
-# Import files for testing loop
-y_1 <- read.csv("~/Documents/PhD/NAM/NAM_mapping/Bootstrapping/phenos_80miss_forbootstrap.csv", header=T)
-
-y_2 <- read.csv("~/Documents/PhD/NAM/NAM_mapping/80miss_MAF05/phenos_MAF05.csv", header=T)[,-1]
-gen_2 <- read.csv("~/Documents/PhD/NAM/NAM_mapping/80miss_MAF05/genos_MAF05.csv", header = T) 
-#gen_test <- as.data.frame(adjusted_genotypes)
-#y_test <- as.data.frame(y_2)
-
-# Store a list of families
-SAMPLE_NAMES<-c(1:88)
+# Store a list of samples
+SAMPLE_NAMES<-y_2[,2]
 
 # Empty matrix to store results
 RESULTS_SIGNIF<-NULL
@@ -87,15 +68,15 @@ SNPs_significant<-NULL
 # for b bootstrappings do:
 for (i in 1:10){
   # Select 20 individuals randomly from the population
-  Sample200 <- SAMPLE_NAMES[ sample(1:length(SAMPLE_NAMES), 2, replace = T)]
+  Sample200 <- SAMPLE_NAMES[ sample(1:length(SAMPLE_NAMES), 20, replace = F)]
   
   # Filter for phenotypes present in the sample
-  Sampled_phen<-y_2[(y_2[,3] %in% Sample200),]
+  Sampled_phen<-y_2[(y_2[,2] %in% Sample200),]
   
   # Filter for genotypes present in the sample
   Sampled_gen<-gen_2[(gen_2[,1] %in% Sampled_phen$line_name),]
  
-  # Strip off first column 
+  # Strip off first column that contains the sample names
   gen_naked <- Sampled_gen[,-1]
   
   # QC for MAF of 1/250 (0.00047)
@@ -109,22 +90,27 @@ for (i in 1:10){
   class(chr) # should be integer
   
   # Need to write to 10 different csv... 
-  my_gwas = gwas2(Sampled_phen$BLUE,adjusted_genotypes,Sampled_phen$family,chr)
-  number_of_markers = nrow(adjusted_genotypes)
+  my_gwas = gwas2(Sampled_phen$DAP_BLUPs,adjusted_genotypes,Sampled_phen$family,chr)
+  number_of_markers = ncol(adjusted_genotypes)
 
     #= Saving plots ====
+  #significant threshold
+  #THR = -log10(0.05 / ( ncol(RESULTS) * (1-0.05)))
+  # (log(number_of_markers*0.05))
+  
+  THR<- -log10(0.05 / ( dim(my_gwas$PolyTest)[1] * (1-0.05)))
   pdf(paste("~/Desktop/GWAS_",i,".pdf",sep=""),width=7,height=5)
   plot( my_gwas, FDR = 0.05)
+  abline(h=THR,col="red")
   dev.off()
   
   #= Assign output to a variable and safe also to a file
     RESULTS<-my_gwas$PolyTest
-    if (length(which(RESULTS$pval >(log(number_of_markers*0.05)))) >0){
-      Significant_Results<-RESULTS[which(RESULTS$pval >(log(number_of_markers*0.05))),]
+    row.names(RESULTS)<-sub("X","",as.character(my_gwas$SNPs))
+    if (length(which(RESULTS$pval > THR)) >0){
+      Significant_Results<-RESULTS[which(RESULTS$pval >THR),]
       SNPs_significant<-c(SNPs_significant,row.names(Significant_Results))
-      RESULTS_SIGNIF<-c(RESULTS_SIGNIF,length(which(RESULTS$pval > (log(number_of_markers*0.05))))) # change significance threshold
-      
-    
+      RESULTS_SIGNIF<-c(RESULTS_SIGNIF,length(which(RESULTS$pval > THR))) # change significance threshold
     }
     assign(paste("NAM_",i,sep=""),my_gwas$PolyTest)
   write.table(my_gwas$PolyTest, paste("~/Desktop/NAM_",i,".txt",sep=""),quote=F,row.names=F,col.names=T,sep="\t")
@@ -136,13 +122,8 @@ write.table(as.data.frame(RESULTS_SIGNIF), "~/Desktop/Sig_count_round.txt",quote
 # The number of times that each significant SNP was found significant 
 write.table(as.data.frame(table(SNPs_significant)), "~/Desktop/Count_timesSigSNP.txt",quote=F,row.names=F,col.names=F,sep="\t")
 
-# 1888 markers
 
-
-log(6000*0.05)
-
-
-### Concatonate results of single family analyses ###
+### Concatenate results of single family analyses ###
 
 for ( i in 1:(dim(Family_list)[1])){
   if(i == 19)next
