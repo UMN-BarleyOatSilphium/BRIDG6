@@ -32,11 +32,14 @@ library(NAM)
 # Load genotypic data
 # ref allele = 2 = major allele
 # 0 = minor allele, this allows minor alleles to have different effects if stratification is provided
+#gen = read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Input/genos_LDKNNI.csv")[,-1]
 gen = read.csv("/home/smithkp/agonzale/Projects/NAM/Analysis/Imputation/Imputed_May/GWAS_imp_pri/LDKNNI/Input/genos_LDKNNI.csv")[,-1]
+
 gen = data.frame(gen)
 
 # Load phenotypic and family data
 # phe1 = pheno in col 3, phe2 = fam in col 2
+#y = read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Input/phenos_LDKNNI.csv", header = TRUE)
 y = read.csv("/home/smithkp/agonzale/Projects/NAM/Analysis/Imputation/Imputed_May/GWAS_imp_pri/LDKNNI/Input/phenos_LDKNNI.csv", header = TRUE)
 y = data.frame(y)
 # get chrom

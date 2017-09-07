@@ -1,10 +1,10 @@
 # Author: Ana Poets
-# Desktop: identify QTL at different Mbp distance
+# Description: identify QTL at different Mbp distance and QTL statistics
 ####################################################################################################
 rm(list=ls())
-
+library(stringr)
 # Determine length (bp) before and after a significant SNP to be defined as one QTL
-LENGTH<-3000000
+LENGTH<-5000000
 
 # Get output after GWAS
 
@@ -13,6 +13,28 @@ Polytest<-read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imput
 # SNP names
 SNPnames<-read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/my_gwas_SNPs_out_80miss_BLUE.csv")
 
+# Order of family names
+Families<-read.csv("/Users/agonzale/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Input/phenos_LDKNNI.csv",sep=",")
+
+# Import parent names
+Parents_famNam<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Data/Alex/Pop_structure_propDiss_JULY2016_parentLessMissingData_grep.txt",header=T)
+
+# Sort by family_grep
+Parents_famNam_or<-Parents_famNam[order(Parents_famNam$Family_grep),]
+# Add Parent name to each individual
+for (i in 1:dim(Parents_famNam_or)[1]){
+  Families[grep(Parents_famNam_or[i,"Family_grep"],Families$line_name),1]<-as.character(Parents_famNam_or[i,"Parent_lessMissingData"])
+}
+
+
+#select unique entries for total 88 families
+Family_ID_uniq<-Families[!duplicated(Families$family),]
+
+#sort by family entry order
+Family_ID_uniq_or<-Family_ID_uniq[order(Family_ID_uniq[,"family"]),]
+
+# Add parents names to the allele effect columns
+names(Polytest)[c(((dim(Polytest)[2])-88 +1):dim(Polytest)[2]) ] <-Family_ID_uniq_or[,1]
 # Add SNP names to the GWAS output
 
 row.names(Polytest)<-sub("X","",SNPnames[,2])
@@ -61,7 +83,7 @@ THR =  -log10(0.05 / ( nrow(Polytest) * (1-0.05)))
 
 for (n in 1:7){
   print(n)
-  # the first QTL is set to 1
+  # the first QTL is set to 1, use to digit numbers so 2.1 and 2.10 are differentiated
   x<-1
   Polytest_pos_chr<-Polytest_pos[grep(paste(n,"H",sep=""),row.names(Polytest_pos)),]
   
@@ -77,7 +99,7 @@ for (n in 1:7){
     ### If the positions between Bottom and Top are NA for QTL assignation, then assign a new QTL. Otherwise, assign whichever QTL already exist for the first SNP.
     # SNPs in QTL
     SNP_qtl<-which(Polytest_pos_chr$Cumul_Pos >= Bottom & Polytest_pos_chr$Cumul_Pos <= Top)
-    if (is.na(Polytest_pos_chr[SNP_qtl[1],"QTL_assig"])){QTLnumber<-paste(n,".",x,sep="") ; x<-(x+1)}else{QTL_assig<-Polytest_pos_chr[SNP_qtl[1],"QTL_assig"]}
+    if (is.na(Polytest_pos_chr[SNP_qtl[1],"QTL_assig"])){QTLnumber<-(paste(n,"_",x,sep="")) ; x<-(x+1)}else{QTL_assig<-Polytest_pos_chr[SNP_qtl[1],"QTL_assig"]}
     Polytest_pos_chr[SNP_qtl,"QTL_assig"]<-QTLnumber
     # move to the next significant p-value outside the last QTL
     Pos_sig_pval_new<-Pos_sig_pval[which(Pos_sig_pval >Top)[1]]
@@ -91,8 +113,8 @@ for (n in 1:7){
 }
 
 GenomeWide_QTLassigned<-rbind(CHROM_1, CHROM_2,CHROM_3,CHROM_4,CHROM_5, CHROM_6, CHROM_7)
-  
-write.table(GenomeWide_QTLassigned,"~/Desktop/GenomeWide_QTLassigned.xls",quote=F,row.names=T,col.names=T,sep="\t")
+
+write.table(GenomeWide_QTLassigned,paste("/Users/agonzale/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/GenomeWide_QTLassigned_",LENGTH,".xls",sep=""),quote=F,row.names=T,col.names=T,sep="\t")
   
 
 # Plot results
@@ -118,4 +140,21 @@ abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/100
 
 print(paste("Total number of QTL:",length(UNIQ_QTL), sep=" "))
   
+# Make a table with the average p-value for QTL and the total number of SNP in that QTL
+# List of the number of QTL assigned
+QTL_all<-names(table(GenomeWide_QTLassigned[,2]))
   
+QTLdescriptionTable<-matrix(NA,ncol=3,nrow=length(QTL_all))
+colnames(QTLdescriptionTable)<-c("QTL","Largest -log(p)","Number of SNPs")
+for (i in 1:length(QTL_all)){
+  p_values<-GenomeWide_QTLassigned[grep(QTL_all[i],GenomeWide_QTLassigned$QTL_assig),"pval"]
+  QTLdescriptionTable[i,1]<-QTL_all[i]
+  QTLdescriptionTable[i,2]<-round(max(p_values),2)
+  QTLdescriptionTable[i,3]<-length(p_values)
+}
+
+write.table(QTLdescriptionTable,"/Users/agonzale/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/Summary_QTL_max.xls",quote=F,row.names=F,col.names=T,sep="\t")
+
+
+
+

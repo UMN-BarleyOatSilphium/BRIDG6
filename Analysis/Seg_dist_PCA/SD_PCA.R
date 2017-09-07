@@ -37,9 +37,14 @@ Distance_few <- select(Distance, c(line_name, Proportion_disimilarity_toRas, Pop
 gendist <- lm(Proportion_disimilarity_toRas ~ factor(Pop_location), data = Distance_few)
 anova(gendist)
 summary(gendist)
-
+####################################################################################################################################
+####################################################################################################################################
 ###>>>*** Segregation distortion ***>>>###
-Seg_dist <- read.table("~/Documents/PhD/NAM/Population_description/Segregation_distortion/88Fam_genmap_segDist_binned.txt", header = T)
+rm(list=ls())
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+Seg_dist <- read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/SNPdensity_and_segDist/88Fam_genmap_segDist_binned.txt", header = T)
 
 # Separate chromsome number from bin label
 Chrom_num <- gsub("_[0-9]*","", row.names(Seg_dist))
@@ -66,7 +71,7 @@ Melted_chrom$ID <- 1:nrow(Melted_chrom)
 
 # Sort and then group families by subpop
 # Import family information, with RILs and parents to know which color to paint them
-family_info <- read.csv("~/Documents/PhD/NAM/Parents/NAM_parent_heading_nochecks_noduplicateparents.csv", header = T, na.strings = "NA")
+family_info <- read.csv("/Users/agonzale/Dropbox/GITHUB/BRIDG6/Datasets/Parents/NAM_parent_heading_nochecks_noduplicateparents.csv", header = T, na.strings = "NA")
 
 # Separate family in populations
 Admix<-subset(family_info, family_info$Pop_location == "Admixed")
@@ -157,6 +162,28 @@ ggplot(data = Arranged_seg_dist, aes(x = bin, y=factor(variable), fill=as.numeri
   geom_tile() 
 # Export as device size landscape 7x12 Manuscripts/Figures/Seg_dist_bypopthenpheno
 
+###########
+#visualize one chromosome for one population at the time
+#CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "5H" & Arranged_seg_dist$Pop_location == "Coastal Med." & Arranged_seg_dist$value >0.75 )
+CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "3H" & Arranged_seg_dist$Pop_location == "E. African" )
+SEG_SEGMENTS<-Arranged_seg_dist[CHR5_OUTLIERS,]
+table(SEG_SEGMENTS[,1])
+
+# get the unmelted data and visualize it in excell
+Seg_dist_chr5<-Seg_dist[grep("CHR3",row.names(Seg_dist)),]
+write.table(Seg_dist_chr5,"~/Desktop/Seg_dist_chr3_eafric.xls",quote=F,row.names=T,col.names=T,sep="\t")
+# get only segments 
+ggplot(data = SEG_SEGMENTS, aes(x = bin, y=factor(variable), fill=as.numeric(value))) +
+  labs(x = "Chromosome", y = "BRIDG Family") +
+  facet_grid( Pop_location_sort ~ chrom, scales = "free", space = "free", switch = "both") +
+  #scale_fill_gradient2(high = "purple", low = "green", mid = "white", na.value = NA, midpoint = 0.50, guide = "colorbar", "Freuency of\nRasmusson Allele", limits = c(0.00, 1.00)) +
+  scale_fill_distiller(palette = "PRGn", limits = c(0.00, 1.00), "Proportion\nRasmusson\nAllele", guide = "colorbar", labels = c("0.00", "0.25", "0.50", "0.75", "1.00"), na.value = "white") +
+  theme(axis.text.y = element_blank(), strip.background = element_blank(), axis.text.x = element_text(face="bold", color="#993333", size=6, angle=90), axis.ticks = element_blank(), panel.border = element_blank(), panel.background = element_rect(color = "grey"), 
+        panel.grid = element_blank(), text = element_text(size = 16), legend.text = element_text(size = 14), legend.title = element_text(size = 14), legend.position = "right") +
+  geom_tile() 
+
+#############
+############
 #PRGn is good
 #RdGy
 #RdYlBu shows that many sites are in equilibrium
