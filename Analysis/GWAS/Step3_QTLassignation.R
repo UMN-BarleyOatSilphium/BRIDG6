@@ -144,13 +144,23 @@ print(paste("Total number of QTL:",length(UNIQ_QTL), sep=" "))
 # List of the number of QTL assigned
 QTL_all<-names(table(GenomeWide_QTLassigned[,2]))
   
-QTLdescriptionTable<-matrix(NA,ncol=3,nrow=length(QTL_all))
-colnames(QTLdescriptionTable)<-c("QTL","Largest -log(p)","Number of SNPs")
+QTLdescriptionTable<-matrix(NA,ncol=6,nrow=length(QTL_all))
+colnames(QTLdescriptionTable)<-c("QTL","Maximum -log(p)","Number of significant SNP","Total number of SNP in QTL region (5Mbp)","Max. Families segregating","Min. Families Segregating")
 for (i in 1:length(QTL_all)){
   p_values<-GenomeWide_QTLassigned[grep(QTL_all[i],GenomeWide_QTLassigned$QTL_assig),"pval"]
   QTLdescriptionTable[i,1]<-QTL_all[i]
   QTLdescriptionTable[i,2]<-round(max(p_values),2)
-  QTLdescriptionTable[i,3]<-length(p_values)
+  QTLdescriptionTable[i,3]<-length(which(p_values >= THR))
+  QTLdescriptionTable[i,4]<-length(p_values)
+  
+  # Get the max and minimum number of families for which a Significant SNP segregates in a QTL
+  data<-GenomeWide_QTLassigned[grep(QTL_all[i],GenomeWide_QTLassigned$QTL_assig),]
+  # get only significant SNPs in the QTL
+  data_sig<-data[which(data$pval >= THR),(dim(data)[2]-87):dim(data)[2]]
+  Segregation<-apply(data_sig,1, function(x) length(which(x >0)))
+  QTLdescriptionTable[i,5]<-max(Segregation)
+  QTLdescriptionTable[i,6]<-min(Segregation)
+  
 }
 
 write.table(QTLdescriptionTable,"/Users/agonzale/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/Summary_QTL_max.xls",quote=F,row.names=F,col.names=T,sep="\t")

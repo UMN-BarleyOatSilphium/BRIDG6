@@ -7,7 +7,7 @@
 
 ########################################################################################################################################################################################################
 rm (list =ls())
-GenomeWide_QTLassigned<-read.table("~/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/GenomeWide_QTLassigned_5e+06.xls",header=T)
+GenomeWide_QTLassigned<-read.table("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/GenomeWide_QTLassigned_5e+06.xls",header=T)
 # Get threshold for significant level
 THR =  -log10(0.05 / ( nrow(GenomeWide_QTLassigned) * (1-0.05))) 
 
@@ -159,11 +159,11 @@ for (z in 1:length(QTL_all_sig)){
 
 
 # Find the genes in the QTL and 1-5 Mbp from either side of a QTL 
-DISTANCE<-0
+DISTANCE<-5000000
 
 #Table SNP near genes
 Table_SNPnearest<-matrix(NA,nrow=1,ncol=10)
-colnames(Table_SNPnearest)<-c("QTL","SNP","-log(p)","Nearest candidate gene","Distance to SNP","Chromosome","Significant","minimum","maximum","Segregating Families")
+colnames(Table_SNPnearest)<-c("QTL","SNP","SNP -log(p)","QTL -log(p)","Nearest candidate gene","Distance to SNP","Chromosome","Minimum allele Effect","Maximum allele effect","Segregating Families")
 
 for (k in 1:dim(QTLsummary)[1]){
   GENE<-Annotations_genes[which(Annotations_genes$Cumul_posMid >= (QTLsummary[k,"start"]- DISTANCE) &Annotations_genes$Cumul_posMid <= (QTLsummary[k,"End"] + DISTANCE)),]
@@ -178,14 +178,16 @@ for (k in 1:dim(QTLsummary)[1]){
       #Maximum lod score for any SNP in the QTL
       QTLinfo<-GenomeWide_QTLassigned[grep(QTLpresent, GenomeWide_QTLassigned$QTL_assig),]
       MAXLOD<-max(QTLinfo$pval)
+      #LOD score for nearest SNP 
+      SNP_LOD<-SNPnearest$pval
       #how close is the SNP to the mid point of the gene
       DISTANCE<-abs(GenomeWide_QTLassigned[,1]-GENE[g,6])[which(abs(GenomeWide_QTLassigned[,1]-GENE[g,6])==min(abs(GenomeWide_QTLassigned[,1]-GENE[g,6])))]
       #Abbreviation nearest gene
       NEAREST_GENE<-GENE[g,2]
       #chromosome. Keep the information from the first SNP in the QTL
       CHR<-GENE[1,3]
-      # number of significnat SNPs in QTL
-      SIG_SNP<-dim(QTLinfo)[1]
+      # number of SNPs in QTL region
+      SNP_region<-dim(QTLinfo)[1]
       # minumul allele effect for the SNP
       MIN_alleleEff<-min(SNPnearest[,c((dim(SNPnearest)[2] - 87):dim(SNPnearest)[2])])
       MAX_alleleEff<-max(SNPnearest[,c((dim(SNPnearest)[2] - 87):dim(SNPnearest)[2])])
@@ -193,8 +195,8 @@ for (k in 1:dim(QTLsummary)[1]){
       NumFAM_SEG<-length(which(SNPnearest[,c((dim(SNPnearest)[2] - 87):dim(SNPnearest)[2])] != 0))
       
       #construct table
-     Table_part<-data.frame(QTLpresent,row.names(SNPnearest), MAXLOD,NEAREST_GENE,round(DISTANCE/1000000,digits=3),CHR,SIG_SNP,MIN_alleleEff, MAX_alleleEff, NumFAM_SEG )
-     names(Table_part)<-c("QTL","SNP","-log(p)","Nearest candidate gene","Distance to SNP","Chromosome","Significant","minimum","maximum","Segregating Families")
+     Table_part<-data.frame(QTLpresent,row.names(SNPnearest), SNP_LOD,MAXLOD,NEAREST_GENE,round(DISTANCE/1000000,digits=3),CHR,MIN_alleleEff, MAX_alleleEff, NumFAM_SEG )
+     names(Table_part)<-c("QTL","SNP","SNP -log(p)","QTL -log(p)","Nearest candidate gene","Distance to SNP","Chromosome","Minimum allele Effect","Maximum allele effect","Segregating Families")
      
      Table_SNPnearest<-rbind(Table_SNPnearest,Table_part)
     }
@@ -204,4 +206,4 @@ for (k in 1:dim(QTLsummary)[1]){
 
 # Remove first row of NA
 Table_SNPnearest<-Table_SNPnearest[-1,]
-write.table(Table_SNPnearest,"/Users/agonzale/Documents/SmithLab/NAM/write/Bridge_edited_files/Tables/Table2_2_Ana_qtlFloweringTime.xls",quote=F,row.names=F,col.names=T,sep="\t")
+write.table(Table_SNPnearest,"/Users/agonzale/Dropbox/SmithLab/NAM/write/Bridge_edited_files/Tables/Table2_2_Ana_qtlFloweringTime.xls",quote=F,row.names=F,col.names=T,sep="\t")

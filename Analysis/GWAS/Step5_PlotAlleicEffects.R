@@ -73,7 +73,21 @@ ggplot(melted_eff, aes(value)) +
   facet_grid(variable ~ ., switch = "y", scales = "free") +
   scale_fill_manual(name = "BRIDG6 Diverse\nParent Subpopulation", values = c("goldenrod1", "violet", "olivedrab3", "turquoise1", "red", "grey55")) +
   theme(strip.background = element_blank(), panel.grid.major = element_blank(), 
-        axis.ticks = element_blank(), panel.border = element_blank(), text = element_text(size = 6),
+        axis.ticks = element_blank(), panel.border = element_blank(), text = element_text(size = 8),
         legend.text = element_text(size = 14), strip.placement = "outside") +
+  scale_x_continuous(expand = c(0,0)) +
+  geom_histogram(binwidth = .2, aes(fill = factor(Pop_location)), na.rm = T)
+
+# Get four top QTL
+# Set values of zero to NA
+melted_eff_4<-melted_eff[which(melted_eff$variable == "2_1" |melted_eff$variable=="7_2"|melted_eff$variable=="7_1"|melted_eff$variable=="3_1"),]
+
+ggplot(melted_eff_4, aes(value)) +
+  labs(x = "Allele Effect", y = "Frequency") +
+  facet_grid(variable ~ ., switch = "y", scales = "free") +
+  scale_fill_manual(name = "BRIDG6 Diverse\nParent Subpopulation", values = c("goldenrod1", "violet", "olivedrab3", "turquoise1", "red", "grey55")) +
+  theme(strip.background = element_blank(), panel.grid.major = element_blank(), 
+        axis.ticks = element_blank(), panel.border = element_blank(), text = element_text(size = 10),
+        legend.text = element_text(size = 14) ) +
   scale_x_continuous(expand = c(0,0)) +
   geom_histogram(binwidth = .2, aes(fill = factor(Pop_location)), na.rm = T)
