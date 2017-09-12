@@ -2,6 +2,7 @@
 # 80miss_byfam 
 # March 4, 2017
 # Alex Ollhoff
+#######################################################################################################################################
 rm(list=ls())
 library(ggplot2)
 library(dplyr)
@@ -57,36 +58,6 @@ for (i in 1:7){
 
 NEW_positions<-rbind(CHR_cor_1, CHR_cor_2, CHR_cor_3, CHR_cor_4, CHR_cor_5, CHR_cor_6, CHR_cor_7)
 
-#########
-########### Remove below ===========================
-Physical_positions <-as.data.frame(Physical_positions)
-row.names(Physical_positions)<-SNP_original_names[,1]
-
-for (i in 1:7){
-  CHR1<-grep(paste(i,"H1", sep=""),row.names(Physical_positions))
-  CHR2<-grep(paste(i,"H2", sep=""),row.names(Physical_positions))
-  assign(paste("CHR",i,"_1",sep=""), CHR1)
-  assign(paste("CHR",i,"_2",sep=""), CHR2)
-}
-
-
-List_chr_parts<-c("CHR1_1","CHR1_2","CHR2_1", "CHR2_2", "CHR3_1", "CHR3_2", "CHR4_1", "CHR4_2", "CHR5_1", "CHR5_2", "CHR6_1", "CHR6_2", "CHR7_1", "CHR7_2")
-
-# Number of bp to add to each part to have a cumulative physical position
-ADD_CHR<-c(0,312837513,558535432,952068106,1326610456,1720921089,2026321570,2381382776,2673381728,3054247210,3343411888,3638233958,3926792401,4252589917)
-
-#Calculate joint physical positions for both parts of a chromosome, then calculate Cumulative positons genome wide
-Positions_original<-Physical_positions[,1]
-
-New_order_phy<-NULL
-for (C in 1:14){
-  CHR_pos<-as.numeric(as.character(Physical_positions[get(List_chr_parts[C]),1]))
-  NEW_chr_pos<-CHR_pos + ADD_CHR[C]
-  New_order_phy <-c(New_order_phy ,NEW_chr_pos)
-}  
-Positions_phy_mbp_cumul<-cbind(SNP_original_names, New_order_phy)
-########### Remove above =#############################################
-#############
 
 # Add column with chromosome names
 CHROM<-apply(SNP_original_names,1, function(x) strsplit(as.character(x), "_")[[1]][1])
