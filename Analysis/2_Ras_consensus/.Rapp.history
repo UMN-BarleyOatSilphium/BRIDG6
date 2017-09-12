@@ -1,0 +1,2268 @@
+Family<-read.table("~/Documents/SmithLab/NAM/Analysis/HAPMAP_sharedSNP_nuc/Pri_hmp_Ras_gbsExome/50missing/List_Fam_afterQC.txt",header=F)
+dim(NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRASsegregating.txt)
+length(NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRASsegregating.txt)
+dim(Family)
+Family[87:88,]
+1656153-1643578
+0/1
+rm(list=ls())#
+#
+options(scipen=999, "digits"=10)#
+RecombRate<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Output/ALL_families_recomRate_MMSpline3.txt",header=T)
+head(RecombRate)
+summary(RecombRate$spline)
+CHRlength<-c(558535432,768075024, 699711114, 647060158, 670030160, 583380513, 657224000)
+VCF_centromere_or <-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt",header=F)#
+#
+# Table of SNPs present in each of the 40 families. Created with Step1_FindRepresentativeFam.R#
+SNPpresent<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/GeneticMap/MSTmap/Consensus/All_SNPs_40fam_recomb.txt",header=T,row.names=1)
+CHR1<-subset(RecombRate,RecombRate[,2] == "1")#
+CHR2<-subset(RecombRate,RecombRate[,2] == "2")#
+CHR3<-subset(RecombRate,RecombRate[,2] == "3")#
+CHR4<-subset(RecombRate,RecombRate[,2] == "4")#
+CHR5<-subset(RecombRate,RecombRate[,2] == "5")#
+CHR6<-subset(RecombRate,RecombRate[,2] == "6")#
+CHR7<-subset(RecombRate,RecombRate[,2] == "7")
+PresentSNPs_count<-function(dat){#
+  COUNT<-length(which(dat == "Yes"))#
+  return(COUNT)#
+}#
+#Table to store all the results#
+RESULTS_all<-NA#
+RESULTS_all_summary<-NA#
+#
+WindowsSize<-5000
+for (i in 1:7){#
+  DATA<-get(paste("CHR",i,sep=""))#
+  TotalLength<-CHRlength[i]#
+  #devide total length in 10,000,000 (10Mbp) windows#
+  NumberParts<-TotalLength/WindowsSize#
+  #get only the decimal part and see how close to a whole window we are. If it is less than 50% then combine #
+  # to the last window#
+  Reminder<-NumberParts%%1#
+  Windows<-NumberParts-Reminder#
+  if (Reminder >=0.6){Windows<-Windows+1}else{Windows<-Windows}#
+  # get information for each windows. The last windows goes to the end of the chromosome.#
+  start_position<-0#
+  for (w in 1:Windows){#
+    if(w != Windows){#
+      Win<-w#
+      Start_windows<-(start_position+1)#
+      End_windows<-Start_windows+ WindowsSize#
+      start_position<-End_windows#
+    }#
+    if(w == Windows){#
+      Win<-w#
+      Start_windows<-start_position+1#
+      End_windows<-CHRlength[i]#
+      start_position<-End_windows#
+    }#
+    #Find all the SNPs in the range (position) for all the families#
+    DATAwindows<-DATA[which(DATA[,4] >= Start_windows & DATA[,4] <= End_windows),]#
+    Mid_distance<-c((Start_windows+End_windows)/2)#
+    if (dim(DATAwindows)[1] == 0)next#
+    SUMMARY<-(DATAwindows$spline)#
+    SUMMARY_recomb<-paste(as.character(SUMMARY), sep="' '", collapse=", ")#
+    SUMMARY_RECOMB_summary<-summary(DATAwindows$spline)#
+    # Get all the SNPs in that window, and calculate the average number of SNPs per family.#
+    WindowsSorted<-DATAwindows[order(DATAwindows$phys),]#
+    FirstSNP<-WindowsSorted[1,3]#
+    LastSNP<-WindowsSorted[(dim(WindowsSorted)[1]),3]#
+    # subset the SNPs in families#
+    SNPpresent_windows<-SNPpresent[c(which(row.names(SNPpresent) == FirstSNP):which(row.names(SNPpresent) == LastSNP)),]#
+    # calculate the number of SNPs per family in that windows #
+    NumberSNPwindows<-apply(SNPpresent_windows,2,PresentSNPs_count)#
+    # calculate the average number of SNPs per family per windows#
+    AverageSNP_summary<-(NumberSNPwindows)#
+    AverageSNP_summary_2<-paste(as.character(AverageSNP_summary), sep="' '", collapse=", ")#
+    AverageSNP_summary_summary<-summary(NumberSNPwindows)#
+    #Format output#
+    Chrom<-paste("CHR_",i,sep="")#
+    RESULTS<-as.data.frame(t(c(Chrom,Start_windows,End_windows,Mid_distance, AverageSNP_summary_2, SUMMARY_recomb)))#
+    colnames(RESULTS)<-c("Chromosome","StartWindow","EndWindow","MidWindow","SNPcounts","RecombAverages")#
+    #Results to print#
+    RESULTS_summary<-as.data.frame(t(c(paste("CHR_",i,sep=""),Start_windows,End_windows,((Start_windows+End_windows)/2),AverageSNP_summary_summary, SUMMARY_RECOMB_summary)))#
+    colnames(RESULTS_summary)<-c("Chromosome","StartWindow","EndWindow","MidWindow","MinSNP","1stQuSNP","MedianSNP","MeanSNP","3rdQuSNP","MaxSNP","MinRecom","1stQuRecom","MedianRecom","MeanRecom","3rdQuRecom","MaxRecom")
+#Combine all the results#
+    RESULTS_all_summary<-rbind(RESULTS_all_summary,RESULTS_summary)#
+    #Combine all the results#
+    RESULTS_all<-rbind(RESULTS_all,RESULTS)#
+  }#
+}
+RESULTS_all<-RESULTS_all[-c(1),]#
+RESULTS_all_df<-as.data.frame(RESULTS_all)#
+#
+# Finish formating the summary of the results for the record#
+RESULTS_all_summary<-RESULTS_all_summary[-c(1),]#
+RESULTS_all_summary_df<-as.data.frame(RESULTS_all_summary)
+head(RESULTS_all_summary_df)
+write.table(RESULTS_all_summary_df,"/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Summary_RecomRate40fam_5kbp.txt",quote=F,row.names=F,col.names=T,sep="\t")
+DATA_final<-RESULTS_all_df#
+#
+library(plyr)#
+#install.packages("fields")#
+library(fields)
+for (n in 1:7){#
+  pdf(paste("/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Plots/5kbp/CHR_",n,"_40fam.pdf",sep=""), width=10, height=7)#
+  TEST<-subset(DATA_final,DATA_final$Chromosome == paste("CHR_",n,sep=""))#
+  TEST[,4]<-as.numeric(as.character(TEST[,4]))/1000000#
+  #in a data frame store all the values for the Recombination Rate variation#
+  RecombTOTAL<-NULL#
+  for(x in 1:dim(TEST)[1]){#
+  DATAframe<-as.data.frame(as.numeric(unlist(strsplit(as.vector(TEST[x,6]), "\\, "))))#
+  names(DATAframe)<-TEST[x,4]#
+  RecombTOTAL_tmp<-merge(RecombTOTAL,DATAframe, by="row.names", all.x=T,all.y=T)#
+  #remove column with Row.names added#
+  if(length(grep("Row.names", colnames(RecombTOTAL_tmp))) >0){RecombTOTAL<-as.data.frame(RecombTOTAL_tmp[,-c(grep("Row.names", colnames(RecombTOTAL_tmp)))]); names(RecombTOTAL)[x]<-names(DATAframe)}else{RecombTOTAL<-as.data.frame(RecombTOTAL_tmp)}#
+  }#
+#
+  #in a data frame store all the values for the SNPcount variation#
+  SNPcountTOTAL<-NULL#
+  for(x in 1:dim(TEST)[1]){#
+    DATAframe<-as.data.frame(as.numeric(unlist(strsplit(as.vector(TEST[x,5]), "\\, "))))#
+    names(DATAframe)<-TEST[x,4]#
+    RecombTOTAL_tmp<-merge(SNPcountTOTAL,DATAframe, by="row.names", all.x=T,all.y=T)#
+    #remove column with Row.names added#
+    if(length(grep("Row.names", colnames(RecombTOTAL_tmp))) >0){SNPcountTOTAL<-as.data.frame(RecombTOTAL_tmp[,-c(grep("Row.names", colnames(RecombTOTAL_tmp)))]); names(SNPcountTOTAL)[x]<-names(DATAframe)}else{SNPcountTOTAL<-as.data.frame(RecombTOTAL_tmp)}#
+  }
+par(mar=c(5,5,2,14))#
+  POSITION<-as.numeric(as.character(colnames(RecombTOTAL)))#
+  bplot(SNPcountTOTAL, pos=POSITION,cex=0.2, axes=F, xlab=NA, ylab=NA, col="light gray",pars=list(outcol="light gray"))#
+  axis(side=4,col="light gray", col.axis="dark gray")#
+  mtext(side=4, line=2, "Distribution of the Number of SNPs per family in 5kbp SNP window",col="black")#
+  # add a line representing the average number of SNPs#
+  par(new=T)#
+  bplot(RecombTOTAL, pos=POSITION,cex=0.2, ylim=c(-10,15),xlab="Physical Position (Mbp",xaxt="n", ylab=NA, col="red", pars=list(outcol="red"))#
+  axis(side=2,col="black", col.axis="black")#
+  mtext(side=2, line=2, "Average Recombination Rate (cM/Mbp) in 5 kbp Windows",col="black")#
+  #draw a line throgh recombination rate means#
+  MEANS<-sapply(RecombTOTAL,mean,na.rm=T)#
+  lines(POSITION,MEANS,col="BLUE")#
+  # round position to nearest hundreth#
+  MaxXlab<-round(max(POSITION),digits=-2)#
+  axis(side=1, at= c(seq(0,MaxXlab,100)), c(seq(0,MaxXlab,100)))#
+  legend(c(MaxXlab+100),15.5,#
+         legend=c("Recombination Rate variation", "Distribution of SNP count per window","Average Recombination Rate"),#
+         lty=c(2,2,1), pch=c(22,22,NA), col=c("red","light gray","BLUE"),cex=0.6, xpd=T)#
+  dev.off()#
+}
+Recombination_all<-read.table("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/5kbWINDOWS/OUTPUT/GenomeWide_output.txt",header=T)#
+#
+# Import list of SNPs that are in genes transcripts positions among the SNPs used for RHO estimations in the parents#
+InGenes<-read.table("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/5kbWINDOWS/OUTPUT/SNPs_inGenes.txt",header=F)#
+#
+# Adjust the values to cumulative bp across the whole genome for plotting purposes #
+CHR1_tr<-InGenes[grep("chr1H", InGenes[,1]),]#
+CHR2_tr<-InGenes[grep("chr2H", InGenes[,1]),]#
+CHR3_tr<-InGenes[grep("chr3H", InGenes[,1]),]#
+CHR4_tr<-InGenes[grep("chr4H", InGenes[,1]),]#
+CHR5_tr<-InGenes[grep("chr5H", InGenes[,1]),]#
+CHR6_tr<-InGenes[grep("chr6H", InGenes[,1]),]#
+CHR7_tr<-InGenes[grep("chr7H", InGenes[,1]),]#
+#
+#Correct positions to have contiguous counting across the whole genome#
+Cumulative_positions<-c(0,558535432,1326610456,2026321570,2673381728,3343411888,3926792401) #cumulative bp to add, 0 to chr1, then chr1_1+chr1_2 to add to chr2, etc.#
+#
+for (j in 1:7){#
+	chromosome<-get(paste("CHR",j,"_tr",sep=""))#
+	chromosome [,3]<- chromosome[,3]+ Cumulative_positions[j]#
+	chromosome[,1]<-rep(paste("CHR",j,sep=""), dim(chromosome)[1])#
+	colnames(chromosome)<-c("Chromosome","WithinChr_CumPos","GenomeWide_Cumulative_bp")#
+	assign(paste("CHR",j,"_tr",sep=""), chromosome)#
+}#
+#
+SNPinGenes_names<-rbind(CHR1_tr, CHR2_tr, CHR3_tr, CHR4_tr, CHR5_tr, CHR6_tr, CHR7_tr)#
+#
+#combine chromosome name and position to one name#
+SNPinGenes_names$SNPname<-paste(SNPinGenes_names[,1], SNPinGenes_names[,3],sep="_")#
+#
+Recombination_all$SNPname<-paste(Recombination_all[,1], Recombination_all[,3],sep="_")#
+#
+Recombination_all_inGenes<-Recombination_all[(Recombination_all$SNPname %in% SNPinGenes_names$SNPname),]#
+Recombination_all_NO_Genes<-subset (Recombination_all, !(Recombination_all$SNPname %in% SNPinGenes_names$SNPname))
+Recombination_all_inGenes<-Recombination_all[(Recombination_all$SNPname %in% SNPinGenes_names$SNPname),]#
+Recombination_all_NO_Genes<-subset (Recombination_all, !(Recombination_all$SNPname %in% SNPinGenes_names$SNPname))#
+#
+# separate by chromosome #
+CHR1_all<-which(Recombination_all[,1] == "CHR1")#
+CHR2_all<-which(Recombination_all[,1] == "CHR2")#
+CHR3_all<-which(Recombination_all[,1] == "CHR3")#
+CHR4_all<-which(Recombination_all[,1] == "CHR4")#
+CHR5_all<-which(Recombination_all[,1] == "CHR5")#
+CHR6_all<-which(Recombination_all[,1] == "CHR6")#
+CHR7_all<-which(Recombination_all[,1] == "CHR7")#
+#separate by chromosome for SNPs in genes#
+#
+CHR1_gn<-which(Recombination_all_inGenes[,1] == "CHR1")#
+CHR2_gn<-which(Recombination_all_inGenes[,1] == "CHR2")#
+CHR3_gn<-which(Recombination_all_inGenes[,1] == "CHR3")#
+CHR4_gn<-which(Recombination_all_inGenes[,1] == "CHR4")#
+CHR5_gn<-which(Recombination_all_inGenes[,1] == "CHR5")#
+CHR6_gn<-which(Recombination_all_inGenes[,1] == "CHR6")#
+CHR7_gn<-which(Recombination_all_inGenes[,1] == "CHR7")#
+#
+#separate by chromosome for non-geneic SNPs#
+CHR1<-which(Recombination_all_NO_Genes[,1] == "CHR1")#
+CHR2<-which(Recombination_all_NO_Genes[,1] == "CHR2")#
+CHR3<-which(Recombination_all_NO_Genes[,1] == "CHR3")#
+CHR4<-which(Recombination_all_NO_Genes[,1] == "CHR4")#
+CHR5<-which(Recombination_all_NO_Genes[,1] == "CHR5")#
+CHR6<-which(Recombination_all_NO_Genes[,1] == "CHR6")#
+CHR7<-which(Recombination_all_NO_Genes[,1] == "CHR7")
+All_fam<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Output/ALL_families_recomRate_MMSpline3.txt",header=T)#
+# Import SNPs known to be in centromere according to Munoz et al 2011.#
+Centromeres<-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt")
+InGenes<-read.table("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/5kbWINDOWS/OUTPUT/SNPs_inGenes.txt",header=F)#
+#
+# Adjust the values to cumulative bp across the whole genome for plotting purposes #
+CHR1_tr<-InGenes[grep("chr1H", InGenes[,1]),]#
+CHR2_tr<-InGenes[grep("chr2H", InGenes[,1]),]#
+CHR3_tr<-InGenes[grep("chr3H", InGenes[,1]),]#
+CHR4_tr<-InGenes[grep("chr4H", InGenes[,1]),]#
+CHR5_tr<-InGenes[grep("chr5H", InGenes[,1]),]#
+CHR6_tr<-InGenes[grep("chr6H", InGenes[,1]),]#
+CHR7_tr<-InGenes[grep("chr7H", InGenes[,1]),]#
+#
+Recombination_all_inGenes<-Recombination_all[(Recombination_all$SNPname %in% SNPinGenes_names$SNPname),]#
+#
+#separate by chromosome for SNPs in genes#
+#
+CHR1_gn<-which(Recombination_all_inGenes[,1] == "CHR1")#
+CHR2_gn<-which(Recombination_all_inGenes[,1] == "CHR2")#
+CHR3_gn<-which(Recombination_all_inGenes[,1] == "CHR3")#
+CHR4_gn<-which(Recombination_all_inGenes[,1] == "CHR4")#
+CHR5_gn<-which(Recombination_all_inGenes[,1] == "CHR5")#
+CHR6_gn<-which(Recombination_all_inGenes[,1] == "CHR6")#
+CHR7_gn<-which(Recombination_all_inGenes[,1] == "CHR7")#
+###  Change SNP position to be cumulative genome wide#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr_toAdd<-c(0,558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+New_cum_phys<-NULL#
+for (j in 1:7){#
+	CHR_fam<-All_fam [grep(paste(j,"H",sep=""), All_fam[,3]),]#
+	New_phys<-CHR_fam[,4] + Cumul_chr_toAdd[j]#
+	New_cum_phys<-c(New_cum_phys , New_phys)#
+}
+Rec_recomb_all<-cbind(All_fam, New_cum_phys)#
+#
+### Get position of SNPs in genes in recent recombination#
+# Import list of SNPs that are in genes from the GBS markers that were used to estimate cM/Mbp#
+SNPinGenesGBS<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/SNPs_inGenes_gbsData.txt",header=F)#
+#
+Rec_recomb_all_inGenes<-Rec_recomb_all[(Rec_recomb_all$phys %in% SNPinGenesGBS[,2]),]
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2, ylab="Recent recombination rate (cM/Mbp)",xlab="Physical position (Mbp)",col="white")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10.5", length(END_window)), rep("14",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+points((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2)
+SUMMARY_5kb<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Summary_RecomRate40fam_5kbp.txt",header=T)
+Cumul_chr_toAdd<-c(0,558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+New_cum_phys<-NULL#
+for (j in 1:7){#
+	CHR_fam<-SUMMARY_5kb [grep(paste("CHR_",j,sep=""), SUMMARY_5kb[,1]),]#
+	New_phys<-CHR_fam[,4] + Cumul_chr_toAdd[j]#
+	New_cum_phys<-c(New_cum_phys , New_phys)#
+}
+Rec_recomb_all<-cbind(SUMMARY_5kb, New_cum_phys)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-4.7", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)
+options(scipen=999, "digits"=10)#
+RecombRate<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Output/ALL_families_recomRate_MMSpline3.txt",header=T)#
+#
+#Chromosome total length#
+CHRlength<-c(558535432,768075024, 699711114, 647060158, 670030160, 583380513, 657224000)#
+#
+# Import BOPA SNP position for centromeric regions as shown in Munoz et al 2011#
+VCF_centromere_or <-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt",header=F)#
+#
+# Table of SNPs present in each of the 40 families. Created with Step1_FindRepresentativeFam.R#
+SNPpresent<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/GeneticMap/MSTmap/Consensus/All_SNPs_40fam_recomb.txt",header=T,row.names=1)#
+# work one chromosome at the time, as recombination rate was estimated per chromosome#
+#
+CHR1<-subset(RecombRate,RecombRate[,2] == "1")#
+CHR2<-subset(RecombRate,RecombRate[,2] == "2")#
+CHR3<-subset(RecombRate,RecombRate[,2] == "3")#
+CHR4<-subset(RecombRate,RecombRate[,2] == "4")#
+CHR5<-subset(RecombRate,RecombRate[,2] == "5")#
+CHR6<-subset(RecombRate,RecombRate[,2] == "6")#
+CHR7<-subset(RecombRate,RecombRate[,2] == "7")#
+# Function to count the number of times a SNP is present in a range#
+PresentSNPs_count<-function(dat){#
+  COUNT<-length(which(dat == "Yes"))#
+  return(COUNT)#
+}
+RESULTS_all<-NA#
+RESULTS_all_summary<-NA
+WindowsSize<-5000
+i<-3
+DATA<-get(paste("CHR",i,sep=""))#
+  TotalLength<-CHRlength[i]#
+  #devide total length in 10,000,000 (10Mbp) windows#
+  NumberParts<-TotalLength/WindowsSize
+dim(NumberParts)
+length(NumberParts)
+NumberParts
+TotalLength
+Reminder<-NumberParts%%1#
+  Windows<-NumberParts-Reminder
+if (Reminder >=0.6){Windows<-Windows+1}else{Windows<-Windows}
+start_position<-0#
+  for (w in 1:Windows){#
+    if(w != Windows){#
+      Win<-w#
+      Start_windows<-(start_position+1)#
+      End_windows<-Start_windows+ WindowsSize#
+      start_position<-End_windows#
+    }#
+    if(w == Windows){#
+      Win<-w#
+      Start_windows<-start_position+1#
+      End_windows<-CHRlength[i]#
+      start_position<-End_windows#
+    }
+DATAwindows<-DATA[which(DATA[,4] >= Start_windows & DATA[,4] <= End_windows),]#
+    Mid_distance<-c((Start_windows+End_windows)/2)
+if (dim(DATAwindows)[1] == 0)next#
+    SUMMARY<-(DATAwindows$spline)#
+    SUMMARY_recomb<-paste(as.character(SUMMARY), sep="' '", collapse=", ")#
+    SUMMARY_RECOMB_summary<-summary(DATAwindows$spline)#
+    # Get all the SNPs in that window, and calculate the average number of SNPs per family.#
+    WindowsSorted<-DATAwindows[order(DATAwindows$phys),]#
+    FirstSNP<-WindowsSorted[1,3]#
+    LastSNP<-WindowsSorted[(dim(WindowsSorted)[1]),3]#
+    # subset the SNPs in families#
+    SNPpresent_windows<-SNPpresent[c(which(row.names(SNPpresent) == FirstSNP):which(row.names(SNPpresent) == LastSNP)),]#
+    # calculate the number of SNPs per family in that windows #
+    NumberSNPwindows<-apply(SNPpresent_windows,2,PresentSNPs_count)#
+    # calculate the average number of SNPs per family per windows#
+    AverageSNP_summary<-(NumberSNPwindows)#
+    AverageSNP_summary_2<-paste(as.character(AverageSNP_summary), sep="' '", collapse=", ")#
+    AverageSNP_summary_summary<-summary(NumberSNPwindows)
+Chrom<-paste("CHR_",i,sep="")#
+    RESULTS<-as.data.frame(t(c(Chrom,Start_windows,End_windows,Mid_distance, AverageSNP_summary_2, SUMMARY_recomb)))#
+    colnames(RESULTS)<-c("Chromosome","StartWindow","EndWindow","MidWindow","SNPcounts","RecombAverages")
+ESULTS_summary<-as.data.frame(t(c(paste("CHR_",i,sep=""),Start_windows,End_windows,((Start_windows+End_windows)/2),AverageSNP_summary_summary, SUMMARY_RECOMB_summary)))#
+    colnames(RESULTS_summary)<-c("Chromosome","StartWindow","EndWindow","MidWindow","MinSNP","1stQuSNP","MedianSNP","MeanSNP","3rdQuSNP","MaxSNP","MinRecom","1stQuRecom","MedianRecom","MeanRecom","3rdQuRecom","MaxRecom")
+RESULTS_all_summary<-rbind(RESULTS_all_summary,RESULTS_summary)#
+    #Combine all the results#
+    RESULTS_all<-rbind(RESULTS_all,RESULTS)
+}
+dim(AverageSNP_summary_summary)
+length(AverageSNP_summary_summary)
+AverageSNP_summary_summary
+head(RESULTS_all)
+tail(RESULTS_all)
+dim(RESULTS_all_summary)
+tail(RESULTS_all_summary)
+dim()
+dim(RESULTS_all)
+i
+rm(list=ls())#
+#
+options(scipen=999, "digits"=10)#
+RecombRate<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Output/ALL_families_recomRate_MMSpline3.txt",header=T)#
+#
+#Chromosome total length#
+CHRlength<-c(558535432,768075024, 699711114, 647060158, 670030160, 583380513, 657224000)#
+#
+# Import BOPA SNP position for centromeric regions as shown in Munoz et al 2011#
+VCF_centromere_or <-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt",header=F)#
+#
+# Table of SNPs present in each of the 40 families. Created with Step1_FindRepresentativeFam.R#
+SNPpresent<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/GeneticMap/MSTmap/Consensus/All_SNPs_40fam_recomb.txt",header=T,row.names=1)#
+# work one chromosome at the time, as recombination rate was estimated per chromosome#
+#
+CHR1<-subset(RecombRate,RecombRate[,2] == "1")#
+CHR2<-subset(RecombRate,RecombRate[,2] == "2")#
+CHR3<-subset(RecombRate,RecombRate[,2] == "3")#
+CHR4<-subset(RecombRate,RecombRate[,2] == "4")#
+CHR5<-subset(RecombRate,RecombRate[,2] == "5")#
+CHR6<-subset(RecombRate,RecombRate[,2] == "6")#
+CHR7<-subset(RecombRate,RecombRate[,2] == "7")#
+# Function to count the number of times a SNP is present in a range#
+PresentSNPs_count<-function(dat){#
+  COUNT<-length(which(dat == "Yes"))#
+  return(COUNT)#
+}#
+#Table to store all the results#
+RESULTS_all<-NA#
+RESULTS_all_summary<-NA#
+#
+WindowsSize<-5000
+i<-3
+DATA<-get(paste("CHR",i,sep=""))#
+  TotalLength<-CHRlength[i]#
+  #devide total length in 10,000,000 (10Mbp) windows#
+  NumberParts<-TotalLength/WindowsSize#
+  #get only the decimal part and see how close to a whole window we are. If it is less than 50% then combine #
+  # to the last window#
+  Reminder<-NumberParts%%1#
+  Windows<-NumberParts-Reminder#
+  if (Reminder >=0.6){Windows<-Windows+1}else{Windows<-Windows}#
+  # get information for each windows. The last windows goes to the end of the chromosome.#
+  start_position<-0#
+  for (w in 1:Windows){#
+    if(w != Windows){#
+      Win<-w#
+      Start_windows<-(start_position+1)#
+      End_windows<-Start_windows+ WindowsSize#
+      start_position<-End_windows#
+    }#
+    if(w == Windows){#
+      Win<-w#
+      Start_windows<-start_position+1#
+      End_windows<-CHRlength[i]#
+      start_position<-End_windows#
+    }#
+    #Find all the SNPs in the range (position) for all the families#
+    DATAwindows<-DATA[which(DATA[,4] >= Start_windows & DATA[,4] <= End_windows),]#
+    Mid_distance<-c((Start_windows+End_windows)/2)#
+    if (dim(DATAwindows)[1] == 0)next#
+    SUMMARY<-(DATAwindows$spline)#
+    SUMMARY_recomb<-paste(as.character(SUMMARY), sep="' '", collapse=", ")#
+    SUMMARY_RECOMB_summary<-summary(DATAwindows$spline)#
+    # Get all the SNPs in that window, and calculate the average number of SNPs per family.#
+    WindowsSorted<-DATAwindows[order(DATAwindows$phys),]#
+    FirstSNP<-WindowsSorted[1,3]#
+    LastSNP<-WindowsSorted[(dim(WindowsSorted)[1]),3]#
+    # subset the SNPs in families#
+    SNPpresent_windows<-SNPpresent[c(which(row.names(SNPpresent) == FirstSNP):which(row.names(SNPpresent) == LastSNP)),]#
+    # calculate the number of SNPs per family in that windows #
+    NumberSNPwindows<-apply(SNPpresent_windows,2,PresentSNPs_count)#
+    # calculate the average number of SNPs per family per windows#
+    AverageSNP_summary<-(NumberSNPwindows)#
+    AverageSNP_summary_2<-paste(as.character(AverageSNP_summary), sep="' '", collapse=", ")#
+    AverageSNP_summary_summary<-summary(NumberSNPwindows)#
+    #Format output#
+    Chrom<-paste("CHR_",i,sep="")#
+    RESULTS<-as.data.frame(t(c(Chrom,Start_windows,End_windows,Mid_distance, AverageSNP_summary_2, SUMMARY_recomb)))#
+    colnames(RESULTS)<-c("Chromosome","StartWindow","EndWindow","MidWindow","SNPcounts","RecombAverages")#
+    #Results to print#
+    RESULTS_summary<-as.data.frame(t(c(paste("CHR_",i,sep=""),Start_windows,End_windows,((Start_windows+End_windows)/2),AverageSNP_summary_summary, SUMMARY_RECOMB_summary)))#
+    colnames(RESULTS_summary)<-c("Chromosome","StartWindow","EndWindow","MidWindow","MinSNP","1stQuSNP","MedianSNP","MeanSNP","3rdQuSNP","MaxSNP","MinRecom","1stQuRecom","MedianRecom","MeanRecom","3rdQuRecom","MaxRecom")#
+    #Combine all the results#
+    RESULTS_all_summary<-rbind(RESULTS_all_summary,RESULTS_summary)#
+    #Combine all the results#
+    RESULTS_all<-rbind(RESULTS_all,RESULTS)#
+  }
+dim(RESULTS_all_summary)
+head(RESULTS_all_summary)
+tail(RESULTS_all_summary)
+tail(RESULTS_all)
+dim(RESULTS_all)
+i<-4
+RESULTS_all<-NA#
+RESULTS_all_summary<-NA#
+#
+WindowsSize<-5000
+DATA<-get(paste("CHR",i,sep=""))#
+  TotalLength<-CHRlength[i]#
+  #devide total length in 10,000,000 (10Mbp) windows#
+  NumberParts<-TotalLength/WindowsSize#
+  #get only the decimal part and see how close to a whole window we are. If it is less than 50% then combine #
+  # to the last window#
+  Reminder<-NumberParts%%1#
+  Windows<-NumberParts-Reminder#
+  if (Reminder >=0.6){Windows<-Windows+1}else{Windows<-Windows}#
+  # get information for each windows. The last windows goes to the end of the chromosome.#
+  start_position<-0#
+  for (w in 1:Windows){#
+    if(w != Windows){#
+      Win<-w#
+      Start_windows<-(start_position+1)#
+      End_windows<-Start_windows+ WindowsSize#
+      start_position<-End_windows#
+    }#
+    if(w == Windows){#
+      Win<-w#
+      Start_windows<-start_position+1#
+      End_windows<-CHRlength[i]#
+      start_position<-End_windows#
+    }#
+    #Find all the SNPs in the range (position) for all the families#
+    DATAwindows<-DATA[which(DATA[,4] >= Start_windows & DATA[,4] <= End_windows),]#
+    Mid_distance<-c((Start_windows+End_windows)/2)#
+    if (dim(DATAwindows)[1] == 0)next#
+    SUMMARY<-(DATAwindows$spline)#
+    SUMMARY_recomb<-paste(as.character(SUMMARY), sep="' '", collapse=", ")#
+    SUMMARY_RECOMB_summary<-summary(DATAwindows$spline)#
+    # Get all the SNPs in that window, and calculate the average number of SNPs per family.#
+    WindowsSorted<-DATAwindows[order(DATAwindows$phys),]#
+    FirstSNP<-WindowsSorted[1,3]#
+    LastSNP<-WindowsSorted[(dim(WindowsSorted)[1]),3]#
+    # subset the SNPs in families#
+    SNPpresent_windows<-SNPpresent[c(which(row.names(SNPpresent) == FirstSNP):which(row.names(SNPpresent) == LastSNP)),]#
+    # calculate the number of SNPs per family in that windows #
+    NumberSNPwindows<-apply(SNPpresent_windows,2,PresentSNPs_count)#
+    # calculate the average number of SNPs per family per windows#
+    AverageSNP_summary<-(NumberSNPwindows)#
+    AverageSNP_summary_2<-paste(as.character(AverageSNP_summary), sep="' '", collapse=", ")#
+    AverageSNP_summary_summary<-summary(NumberSNPwindows)#
+    #Format output#
+    Chrom<-paste("CHR_",i,sep="")#
+    RESULTS<-as.data.frame(t(c(Chrom,Start_windows,End_windows,Mid_distance, AverageSNP_summary_2, SUMMARY_recomb)))#
+    colnames(RESULTS)<-c("Chromosome","StartWindow","EndWindow","MidWindow","SNPcounts","RecombAverages")#
+    #Results to print#
+    RESULTS_summary<-as.data.frame(t(c(paste("CHR_",i,sep=""),Start_windows,End_windows,((Start_windows+End_windows)/2),AverageSNP_summary_summary, SUMMARY_RECOMB_summary)))#
+    colnames(RESULTS_summary)<-c("Chromosome","StartWindow","EndWindow","MidWindow","MinSNP","1stQuSNP","MedianSNP","MeanSNP","3rdQuSNP","MaxSNP","MinRecom","1stQuRecom","MedianRecom","MeanRecom","3rdQuRecom","MaxRecom")#
+    #Combine all the results#
+    RESULTS_all_summary<-rbind(RESULTS_all_summary,RESULTS_summary)#
+    #Combine all the results#
+    RESULTS_all<-rbind(RESULTS_all,RESULTS)#
+  }
+head(RESULTS_all_summary)
+head(RESULTS_all)
+SUMMARY_5kb<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Summary_RecomRate40fam_5kbp.txt",header=T)
+head(SUMMARY_5kb)
+tail(grep("CHR_3", SUMMARY_5kb[,1]))
+SUMMARY_5kb[3915:3925,]
+tail(grep("CHR_3", Rec_recomb_all[,1]))
+head(Rec_recomb_all)
+SUMMARY_5kb<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Summary_RecomRate40fam_5kbp.txt",header=T)#
+###  Change SNP position to be cumulative genome wide#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr_toAdd<-c(0,558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+New_cum_phys<-NULL#
+for (j in 1:7){#
+	CHR_fam<-SUMMARY_5kb [grep(paste("CHR_",j,sep=""), SUMMARY_5kb[,1]),]#
+	New_phys<-CHR_fam[,4] + Cumul_chr_toAdd[j]#
+	New_cum_phys<-c(New_cum_phys , New_phys)#
+}#
+#
+Rec_recomb_all<-cbind(SUMMARY_5kb, New_cum_phys)
+head(Rec_recomb_all)
+tail(grep("CHR_3", Rec_recomb_all[,1]))
+Rec_recomb_all[3915:3925,]
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")
+ptions(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-4.7", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-4.7", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+points((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+identify((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom)
+Rec_recomb_all[3893,]
+3920-3893
+RESULTS_all<-NA#
+RESULTS_all_summary<-NA#
+#
+WindowsSize<-5000
+i<-3
+DATA<-get(paste("CHR",i,sep=""))#
+  TotalLength<-CHRlength[i]#
+  #devide total length in 10,000,000 (10Mbp) windows#
+  NumberParts<-TotalLength/WindowsSize#
+  #get only the decimal part and see how close to a whole window we are. If it is less than 50% then combine #
+  # to the last window#
+  Reminder<-NumberParts%%1#
+  Windows<-NumberParts-Reminder#
+  if (Reminder >=0.6){Windows<-Windows+1}else{Windows<-Windows}#
+  # get information for each windows. The last windows goes to the end of the chromosome.#
+  start_position<-0#
+  for (w in 1:Windows){#
+    if(w != Windows){#
+      Win<-w#
+      Start_windows<-(start_position+1)#
+      End_windows<-Start_windows+ WindowsSize#
+      start_position<-End_windows#
+    }#
+    if(w == Windows){#
+      Win<-w#
+      Start_windows<-start_position+1#
+      End_windows<-CHRlength[i]#
+      start_position<-End_windows#
+    }
+DATAwindows<-DATA[which(DATA[,4] >= Start_windows & DATA[,4] <= End_windows),]#
+    Mid_distance<-c((Start_windows+End_windows)/2)#
+    if (dim(DATAwindows)[1] == 0)next#
+    SUMMARY<-(DATAwindows$spline)#
+    SUMMARY_recomb<-paste(as.character(SUMMARY), sep="' '", collapse=", ")#
+    SUMMARY_RECOMB_summary<-summary(DATAwindows$spline)#
+    # Get all the SNPs in that window, and calculate the average number of SNPs per family.#
+    WindowsSorted<-DATAwindows[order(DATAwindows$phys),]#
+    FirstSNP<-WindowsSorted[1,3]#
+    LastSNP<-WindowsSorted[(dim(WindowsSorted)[1]),3]#
+    # subset the SNPs in families#
+    SNPpresent_windows<-SNPpresent[c(which(row.names(SNPpresent) == FirstSNP):which(row.names(SNPpresent) == LastSNP)),]#
+    # calculate the number of SNPs per family in that windows #
+    NumberSNPwindows<-apply(SNPpresent_windows,2,PresentSNPs_count)#
+    # calculate the average number of SNPs per family per windows#
+    AverageSNP_summary<-(NumberSNPwindows)#
+    AverageSNP_summary_2<-paste(as.character(AverageSNP_summary), sep="' '", collapse=", ")#
+    AverageSNP_summary_summary<-summary(NumberSNPwindows)#
+    #Format output#
+    Chrom<-paste("CHR_",i,sep="")#
+    RESULTS<-as.data.frame(t(c(Chrom,Start_windows,End_windows,Mid_distance, AverageSNP_summary_2, SUMMARY_recomb)))#
+    colnames(RESULTS)<-c("Chromosome","StartWindow","EndWindow","MidWindow","SNPcounts","RecombAverages")#
+    #Results to print#
+    RESULTS_summary<-as.data.frame(t(c(paste("CHR_",i,sep=""),Start_windows,End_windows,((Start_windows+End_windows)/2),AverageSNP_summary_summary, SUMMARY_RECOMB_summary)))#
+    colnames(RESULTS_summary)<-c("Chromosome","StartWindow","EndWindow","MidWindow","MinSNP","1stQuSNP","MedianSNP","MeanSNP","3rdQuSNP","MaxSNP","MinRecom","1stQuRecom","MedianRecom","MeanRecom","3rdQuRecom","MaxRecom")#
+    #Combine all the results#
+    RESULTS_all_summary<-rbind(RESULTS_all_summary,RESULTS_summary)#
+    #Combine all the results#
+    RESULTS_all<-rbind(RESULTS_all,RESULTS)#
+  }
+dim RESULTS_all_summary
+dim(RESULTS_all_summary)
+1403/27
+1403-27
+RESULTS_all_summary[1373:1379,]
+RESULTS_all[1373:1379,]
+114.700968867404 -112.945862400573
+693426364-693386266
+1.755106466830995/40098
+0.00004377042413165233 *1000000
+112.945862400573-105.340578040498
+693.386266 - 687.714022
+7.605284360075004/5.672243999999978
+114.700968867404-112.945862400573
+696.349247 - 693.426364
+1.755106466830995/2.922882999999956
+rm(list=ls())#
+#
+options(scipen=999, "digits"=10)#
+RecombRate<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Output/ALL_families_recomRate_MMSpline3.txt",header=T)#
+#
+#Chromosome total length#
+CHRlength<-c(558535432,768075024, 699711114, 647060158, 670030160, 583380513, 657224000)#
+#
+# Import BOPA SNP position for centromeric regions as shown in Munoz et al 2011#
+VCF_centromere_or <-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt",header=F)#
+#
+# Table of SNPs present in each of the 40 families. Created with Step1_FindRepresentativeFam.R#
+SNPpresent<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/GeneticMap/MSTmap/Consensus/All_SNPs_40fam_recomb.txt",header=T,row.names=1)#
+# work one chromosome at the time, as recombination rate was estimated per chromosome#
+#
+CHR1<-subset(RecombRate,RecombRate[,2] == "1")#
+CHR2<-subset(RecombRate,RecombRate[,2] == "2")#
+CHR3<-subset(RecombRate,RecombRate[,2] == "3")#
+CHR4<-subset(RecombRate,RecombRate[,2] == "4")#
+CHR5<-subset(RecombRate,RecombRate[,2] == "5")#
+CHR6<-subset(RecombRate,RecombRate[,2] == "6")#
+CHR7<-subset(RecombRate,RecombRate[,2] == "7")#
+# Function to count the number of times a SNP is present in a range#
+PresentSNPs_count<-function(dat){#
+  COUNT<-length(which(dat == "Yes"))#
+  return(COUNT)#
+}#
+#Table to store all the results#
+RESULTS_all<-NA#
+RESULTS_all_summary<-NA#
+#
+WindowsSize<-5000#
+for (i in 1:7){#
+  DATA<-get(paste("CHR",i,sep=""))#
+  TotalLength<-CHRlength[i]#
+  #devide total length in 10,000,000 (10Mbp) windows#
+  NumberParts<-TotalLength/WindowsSize#
+  #get only the decimal part and see how close to a whole window we are. If it is less than 50% then combine #
+  # to the last window#
+  Reminder<-NumberParts%%1#
+  Windows<-NumberParts-Reminder#
+  if (Reminder >=0.6){Windows<-Windows+1}else{Windows<-Windows}#
+  # get information for each windows. The last windows goes to the end of the chromosome.#
+  start_position<-0#
+  for (w in 1:Windows){#
+    if(w != Windows){#
+      Win<-w#
+      Start_windows<-(start_position+1)#
+      End_windows<-Start_windows+ WindowsSize#
+      start_position<-End_windows#
+    }#
+    if(w == Windows){#
+      Win<-w#
+      Start_windows<-start_position+1#
+      End_windows<-CHRlength[i]#
+      start_position<-End_windows#
+    }#
+    #Find all the SNPs in the range (position) for all the families#
+    DATAwindows<-DATA[which(DATA[,4] >= Start_windows & DATA[,4] <= End_windows),]#
+    Mid_distance<-c((Start_windows+End_windows)/2)#
+    if (dim(DATAwindows)[1] == 0)next#
+    SUMMARY<-(DATAwindows$spline)#
+    SUMMARY_recomb<-paste(as.character(SUMMARY), sep="' '", collapse=", ")#
+    SUMMARY_RECOMB_summary<-summary(DATAwindows$spline)#
+    # Get all the SNPs in that window, and calculate the average number of SNPs per family.#
+    WindowsSorted<-DATAwindows[order(DATAwindows$phys),]#
+    FirstSNP<-WindowsSorted[1,3]#
+    LastSNP<-WindowsSorted[(dim(WindowsSorted)[1]),3]#
+    # subset the SNPs in families#
+    SNPpresent_windows<-SNPpresent[c(which(row.names(SNPpresent) == FirstSNP):which(row.names(SNPpresent) == LastSNP)),]#
+    # calculate the number of SNPs per family in that windows #
+    NumberSNPwindows<-apply(SNPpresent_windows,2,PresentSNPs_count)#
+    # calculate the average number of SNPs per family per windows#
+    AverageSNP_summary<-(NumberSNPwindows)#
+    AverageSNP_summary_2<-paste(as.character(AverageSNP_summary), sep="' '", collapse=", ")#
+    AverageSNP_summary_summary<-summary(NumberSNPwindows)#
+    #Format output#
+    Chrom<-paste("CHR_",i,sep="")#
+    RESULTS<-as.data.frame(t(c(Chrom,Start_windows,End_windows,Mid_distance, AverageSNP_summary_2, SUMMARY_recomb)))#
+    colnames(RESULTS)<-c("Chromosome","StartWindow","EndWindow","MidWindow","SNPcounts","RecombAverages")#
+    #Results to print#
+    RESULTS_summary<-as.data.frame(t(c(paste("CHR_",i,sep=""),Start_windows,End_windows,((Start_windows+End_windows)/2),AverageSNP_summary_summary, SUMMARY_RECOMB_summary)))#
+    colnames(RESULTS_summary)<-c("Chromosome","StartWindow","EndWindow","MidWindow","MinSNP","1stQuSNP","MedianSNP","MeanSNP","3rdQuSNP","MaxSNP","MinRecom","1stQuRecom","MedianRecom","MeanRecom","3rdQuRecom","MaxRecom")#
+    #Combine all the results#
+    RESULTS_all_summary<-rbind(RESULTS_all_summary,RESULTS_summary)#
+    #Combine all the results#
+    RESULTS_all<-rbind(RESULTS_all,RESULTS)#
+  }#
+}#
+# Remove first row was it is just NAs#
+RESULTS_all<-RESULTS_all[-c(1),]#
+RESULTS_all_df<-as.data.frame(RESULTS_all)#
+#
+# Finish formating the summary of the results for the record#
+RESULTS_all_summary<-RESULTS_all_summary[-c(1),]#
+RESULTS_all_summary_df<-as.data.frame(RESULTS_all_summary)#
+#
+write.table(RESULTS_all_summary_df,"/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Summary_RecomRate40fam_5kbp.txt",quote=F,row.names=F,col.names=T,sep="\t")
+DATA_final<-RESULTS_all_df#
+#
+library(plyr)#
+#install.packages("fields")#
+library(fields)
+n<-3
+pdf(paste("/Users/agonzale/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Plots/5kbp/CHR_",n,"_40fam.pdf",sep=""), width=10, height=7)#
+  TEST<-subset(DATA_final,DATA_final$Chromosome == paste("CHR_",n,sep=""))#
+  TEST[,4]<-as.numeric(as.character(TEST[,4]))/1000000#
+  #in a data frame store all the values for the Recombination Rate variation#
+  RecombTOTAL<-NULL#
+  for(x in 1:dim(TEST)[1]){#
+  DATAframe<-as.data.frame(as.numeric(unlist(strsplit(as.vector(TEST[x,6]), "\\, "))))#
+  names(DATAframe)<-TEST[x,4]#
+  RecombTOTAL_tmp<-merge(RecombTOTAL,DATAframe, by="row.names", all.x=T,all.y=T)#
+  #remove column with Row.names added#
+  if(length(grep("Row.names", colnames(RecombTOTAL_tmp))) >0){RecombTOTAL<-as.data.frame(RecombTOTAL_tmp[,-c(grep("Row.names", colnames(RecombTOTAL_tmp)))]); names(RecombTOTAL)[x]<-names(DATAframe)}else{RecombTOTAL<-as.data.frame(RecombTOTAL_tmp)}#
+  }#
+#
+  #in a data frame store all the values for the SNPcount variation#
+  SNPcountTOTAL<-NULL#
+  for(x in 1:dim(TEST)[1]){#
+    DATAframe<-as.data.frame(as.numeric(unlist(strsplit(as.vector(TEST[x,5]), "\\, "))))#
+    names(DATAframe)<-TEST[x,4]#
+    RecombTOTAL_tmp<-merge(SNPcountTOTAL,DATAframe, by="row.names", all.x=T,all.y=T)#
+    #remove column with Row.names added#
+    if(length(grep("Row.names", colnames(RecombTOTAL_tmp))) >0){SNPcountTOTAL<-as.data.frame(RecombTOTAL_tmp[,-c(grep("Row.names", colnames(RecombTOTAL_tmp)))]); names(SNPcountTOTAL)[x]<-names(DATAframe)}else{SNPcountTOTAL<-as.data.frame(RecombTOTAL_tmp)}
+}
+rm(list=ls())#
+Recombination_all<-read.table("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/5kbWINDOWS/OUTPUT/GenomeWide_output.txt",header=T)#
+#
+# Import list of SNPs that are in genes transcripts positions among the SNPs used for RHO estimations in the parents#
+InGenes<-read.table("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/5kbWINDOWS/OUTPUT/SNPs_inGenes.txt",header=F)#
+#
+# Adjust the values to cumulative bp across the whole genome for plotting purposes #
+CHR1_tr<-InGenes[grep("chr1H", InGenes[,1]),]#
+CHR2_tr<-InGenes[grep("chr2H", InGenes[,1]),]#
+CHR3_tr<-InGenes[grep("chr3H", InGenes[,1]),]#
+CHR4_tr<-InGenes[grep("chr4H", InGenes[,1]),]#
+CHR5_tr<-InGenes[grep("chr5H", InGenes[,1]),]#
+CHR6_tr<-InGenes[grep("chr6H", InGenes[,1]),]#
+CHR7_tr<-InGenes[grep("chr7H", InGenes[,1]),]#
+#
+#Correct positions to have contiguous counting across the whole genome#
+Cumulative_positions<-c(0,558535432,1326610456,2026321570,2673381728,3343411888,3926792401) #cumulative bp to add, 0 to chr1, then chr1_1+chr1_2 to add to chr2, etc.#
+#
+for (j in 1:7){#
+	chromosome<-get(paste("CHR",j,"_tr",sep=""))#
+	chromosome [,3]<- chromosome[,3]+ Cumulative_positions[j]#
+	chromosome[,1]<-rep(paste("CHR",j,sep=""), dim(chromosome)[1])#
+	colnames(chromosome)<-c("Chromosome","WithinChr_CumPos","GenomeWide_Cumulative_bp")#
+	assign(paste("CHR",j,"_tr",sep=""), chromosome)#
+}#
+#
+SNPinGenes_names<-rbind(CHR1_tr, CHR2_tr, CHR3_tr, CHR4_tr, CHR5_tr, CHR6_tr, CHR7_tr)#
+#
+#combine chromosome name and position to one name#
+SNPinGenes_names$SNPname<-paste(SNPinGenes_names[,1], SNPinGenes_names[,3],sep="_")#
+#
+Recombination_all$SNPname<-paste(Recombination_all[,1], Recombination_all[,3],sep="_")#
+#
+Recombination_all_inGenes<-Recombination_all[(Recombination_all$SNPname %in% SNPinGenes_names$SNPname),]#
+Recombination_all_NO_Genes<-subset (Recombination_all, !(Recombination_all$SNPname %in% SNPinGenes_names$SNPname))#
+# === PLOT : Rho  ======================================================================#
+Recombination_all_inGenes<-Recombination_all[(Recombination_all$SNPname %in% SNPinGenes_names$SNPname),]#
+Recombination_all_NO_Genes<-subset (Recombination_all, !(Recombination_all$SNPname %in% SNPinGenes_names$SNPname))#
+#
+# separate by chromosome #
+CHR1_all<-which(Recombination_all[,1] == "CHR1")#
+CHR2_all<-which(Recombination_all[,1] == "CHR2")#
+CHR3_all<-which(Recombination_all[,1] == "CHR3")#
+CHR4_all<-which(Recombination_all[,1] == "CHR4")#
+CHR5_all<-which(Recombination_all[,1] == "CHR5")#
+CHR6_all<-which(Recombination_all[,1] == "CHR6")#
+CHR7_all<-which(Recombination_all[,1] == "CHR7")#
+#separate by chromosome for SNPs in genes#
+#
+CHR1_gn<-which(Recombination_all_inGenes[,1] == "CHR1")#
+CHR2_gn<-which(Recombination_all_inGenes[,1] == "CHR2")#
+CHR3_gn<-which(Recombination_all_inGenes[,1] == "CHR3")#
+CHR4_gn<-which(Recombination_all_inGenes[,1] == "CHR4")#
+CHR5_gn<-which(Recombination_all_inGenes[,1] == "CHR5")#
+CHR6_gn<-which(Recombination_all_inGenes[,1] == "CHR6")#
+CHR7_gn<-which(Recombination_all_inGenes[,1] == "CHR7")#
+#
+#separate by chromosome for non-geneic SNPs#
+CHR1<-which(Recombination_all_NO_Genes[,1] == "CHR1")#
+CHR2<-which(Recombination_all_NO_Genes[,1] == "CHR2")#
+CHR3<-which(Recombination_all_NO_Genes[,1] == "CHR3")#
+CHR4<-which(Recombination_all_NO_Genes[,1] == "CHR4")#
+CHR5<-which(Recombination_all_NO_Genes[,1] == "CHR5")#
+CHR6<-which(Recombination_all_NO_Genes[,1] == "CHR6")#
+CHR7<-which(Recombination_all_NO_Genes[,1] == "CHR7")
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright", pch=c(NA,NA,1,NA,NA),lty=c(1,1,0,2,1),col=c("seashell2","gray","black","green","orange"), lwd=c(3,1,NA,1,1),c("Windows analized","Recombination Rate","SNP in genes","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+Centromeres<-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt")
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright", pch=c(NA,NA,1,NA,NA),lty=c(1,1,0,2,1),col=c("seashell2","gray","black","green","orange"), lwd=c(3,1,NA,1,1),c("Windows analized","Recombination Rate","SNP in genes","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+All_fam<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Output/ALL_families_recomRate_MMSpline3.txt",header=T)#
+# Import SNPs known to be in centromere according to Munoz et al 2011.#
+Centromeres<-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt")
+InGenes<-read.table("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/5kbWINDOWS/OUTPUT/SNPs_inGenes.txt",header=F)#
+#
+# Adjust the values to cumulative bp across the whole genome for plotting purposes #
+CHR1_tr<-InGenes[grep("chr1H", InGenes[,1]),]#
+CHR2_tr<-InGenes[grep("chr2H", InGenes[,1]),]#
+CHR3_tr<-InGenes[grep("chr3H", InGenes[,1]),]#
+CHR4_tr<-InGenes[grep("chr4H", InGenes[,1]),]#
+CHR5_tr<-InGenes[grep("chr5H", InGenes[,1]),]#
+CHR6_tr<-InGenes[grep("chr6H", InGenes[,1]),]#
+CHR7_tr<-InGenes[grep("chr7H", InGenes[,1]),]#
+#
+Recombination_all_inGenes<-Recombination_all[(Recombination_all$SNPname %in% SNPinGenes_names$SNPname),]#
+#
+#separate by chromosome for SNPs in genes#
+#
+CHR1_gn<-which(Recombination_all_inGenes[,1] == "CHR1")#
+CHR2_gn<-which(Recombination_all_inGenes[,1] == "CHR2")#
+CHR3_gn<-which(Recombination_all_inGenes[,1] == "CHR3")#
+CHR4_gn<-which(Recombination_all_inGenes[,1] == "CHR4")#
+CHR5_gn<-which(Recombination_all_inGenes[,1] == "CHR5")#
+CHR6_gn<-which(Recombination_all_inGenes[,1] == "CHR6")#
+CHR7_gn<-which(Recombination_all_inGenes[,1] == "CHR7")#
+###  Change SNP position to be cumulative genome wide#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr_toAdd<-c(0,558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)
+New_cum_phys<-NULL#
+for (j in 1:7){#
+	CHR_fam<-All_fam [grep(paste(j,"H",sep=""), All_fam[,3]),]#
+	New_phys<-CHR_fam[,4] + Cumul_chr_toAdd[j]#
+	New_cum_phys<-c(New_cum_phys , New_phys)#
+}#
+#
+Rec_recomb_all<-cbind(All_fam, New_cum_phys)#
+#
+### Get position of SNPs in genes in recent recombination#
+# Import list of SNPs that are in genes from the GBS markers that were used to estimate cM/Mbp#
+SNPinGenesGBS<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/SNPs_inGenes_gbsData.txt",header=F)#
+#
+Rec_recomb_all_inGenes<-Rec_recomb_all[(Rec_recomb_all$phys %in% SNPinGenesGBS[,2]),]
+ar(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2, ylab="Recent recombination rate (cM/Mbp)",xlab="Physical position (Mbp)",col="white")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10.5", length(END_window)), rep("14",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2, ylab="Recent recombination rate (cM/Mbp)",xlab="Physical position (Mbp)",col="white")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10.5", length(END_window)), rep("14",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))
+points((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2, ylab="Recent recombination rate (cM/Mbp)",xlab="Physical position (Mbp)",col="white")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10.5", length(END_window)), rep("14",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+points((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2)
+dev.new()
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2, ylab="Recent recombination rate (cM/Mbp)",xlab="Physical position (Mbp)",col="white")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10.5", length(END_window)), rep("14",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+points((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2)
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $spline,cex=0.2)
+SUMMARY_5kb<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Summary_RecomRate40fam_5kbp.txt",header=T)#
+###  Change SNP position to be cumulative genome wide#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr_toAdd<-c(0,558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)
+New_cum_phys<-NULL#
+for (j in 1:7){#
+	CHR_fam<-SUMMARY_5kb [grep(paste("CHR_",j,sep=""), SUMMARY_5kb[,1]),]#
+	New_phys<-CHR_fam[,4] + Cumul_chr_toAdd[j]#
+	New_cum_phys<-c(New_cum_phys , New_phys)#
+}#
+#
+Rec_recomb_all<-cbind(SUMMARY_5kb, New_cum_phys)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-4.7", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+points((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-2", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+plot(Recombination_all$Mbp,-1/log(Recombination_all[,5],10),axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,-1/log(Recombination_all[,5],10),axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,-1/log(Recombination_all[,5],10),axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], -1/log(Recombination_all[CHR1_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], -1/log(Recombination_all[CHR2_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], -1/log(Recombination_all[CHR3_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], -1/log(Recombination_all[CHR4_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], -1/log(Recombination_all[CHR5_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], -1/log(Recombination_all[CHR6_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], -1/log(Recombination_all[CHR7_all,5],10), cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,-1/log(Recombination_all[,5],10),axes=F, ylab=NA,xlab=NA, cex=0.1, col="red", ylim=c(-0.4,0.9))#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], -1/log(Recombination_all[CHR1_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], -1/log(Recombination_all[CHR2_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], -1/log(Recombination_all[CHR3_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], -1/log(Recombination_all[CHR4_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], -1/log(Recombination_all[CHR5_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], -1/log(Recombination_all[CHR6_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], -1/log(Recombination_all[CHR7_all,5],10), cex=0.4, col="red", pch=1)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,-1/log(Recombination_all[,5],10),axes=F, ylab=NA,xlab=NA, cex=0.1, col="red", ylim=c(-0.8,0.9))#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], -1/log(Recombination_all[CHR1_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], -1/log(Recombination_all[CHR2_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], -1/log(Recombination_all[CHR3_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], -1/log(Recombination_all[CHR4_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], -1/log(Recombination_all[CHR5_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], -1/log(Recombination_all[CHR6_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], -1/log(Recombination_all[CHR7_all,5],10), cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (-1/log(",rho,"))",sep="")))
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,-1/log(Recombination_all[,5],10),axes=F, ylab=NA,xlab=NA, cex=0.1, col="red", ylim=c(-0.8,0.9))#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (-1/log(",rho,"))",sep="")))#
+lines(Recombination_all[CHR1_all,8], -1/log(Recombination_all[CHR1_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], -1/log(Recombination_all[CHR2_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], -1/log(Recombination_all[CHR3_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], -1/log(Recombination_all[CHR4_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], -1/log(Recombination_all[CHR5_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], -1/log(Recombination_all[CHR6_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], -1/log(Recombination_all[CHR7_all,5],10), cex=0.4, col="red", pch=1)
+pdf ("~/Documents/SmithLab/NAM/Analysis/Ancestral_vs_recentRecomb/Plots/AncestralVSmeanRecentRecomb_lines_log.pdf",width=20,height=7)#
+#
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,-1/log(Recombination_all[,5],10),axes=F, ylab=NA,xlab=NA, cex=0.1, col="red", ylim=c(-0.8,0.9))#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (-1/log(",rho,"))",sep="")))#
+lines(Recombination_all[CHR1_all,8], -1/log(Recombination_all[CHR1_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], -1/log(Recombination_all[CHR2_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], -1/log(Recombination_all[CHR3_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], -1/log(Recombination_all[CHR4_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], -1/log(Recombination_all[CHR5_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], -1/log(Recombination_all[CHR6_all,5],10), cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], -1/log(Recombination_all[CHR7_all,5],10), cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")#
+#
+dev.off()
+pdf ("~/Documents/SmithLab/NAM/Analysis/Ancestral_vs_recentRecomb/Plots/AncestralVSmeanRecentRecomb_lines.pdf",width=20,height=7)#
+#
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")#
+#
+dev.off()
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red", ylab=c(-5, 11))#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")#
+#
+dev.off()
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red", ylab=c(-5, 11))#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")#
+#
+dev.off()
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red", ylab=c(-10, 11))#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")#
+#
+dev.off()
+pdf ("~/Documents/SmithLab/NAM/Analysis/Ancestral_vs_recentRecomb/Plots/AncestralVSmeanRecentRecomb_lines.pdf",width=20,height=7)#
+#
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows",ylab=c(-5, 11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")#
+#
+dev.off()
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows",ylab=c(-5, 11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows",ylab=c(-2, 11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows")#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2)
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-5,11)#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11)
+)
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-1.8", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("10.7",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("10.9",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")
+pdf ("~/Documents/SmithLab/NAM/Analysis/Ancestral_vs_recentRecomb/Plots/AncestralVSmeanRecentRecomb_lines.pdf",width=20,height=7)#
+#
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)#
+#
+# Genome wide cumulative position of each chromosome end#
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)#
+#
+legend("topright",lty=c(1,1,1,2,1),col=c("seashell2","black","red","green","orange"), lwd=c(3,1,1,1,1),c("Windows analized for ancestral recombination","Mean recent recombination rate","Historical Recombination","Chromosome boundary","Centromeres"), cex=0.6, box.col = "black",bg = "white")#
+#
+dev.off()
+SUMMARY_5kb<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Summary/Summary_RecomRate40fam_5kbp.txt",header=T)
+head(SUMMARY_5kb)
+summary(SUMMARY_5kb$MeanSNP)
+All_fam<-read.table("~/Documents/SmithLab/NAM/Analysis/Recent_Recombination/MareyMap/Output/ALL_families_recomRate_MMSpline3.txt",header=T)#
+# Import SNPs known to be in centromere according to Munoz et al 2011.#
+Centromeres<-read.table("~/Dropbox/SmithLab/NAM/Data/Centromere_munoz2011/CentromeresInNewRef.txt")
+head(All_fam)
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+CHR1_SNP<-All_fam[(grep("1H", All_fam$All_fam)),]
+head(CHR1_SNP)
+CHR1_SNP<-All_fam[(grep("1H", All_fam$mkr)),]
+head(CHR1_SNP)
+plot(rep(0,dim(CHR1_SNP)[1]), CHR1_SNP$phys, col="red")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+plot(CHR1_SNP$phys,rep(0,dim(CHR1_SNP)[1]), col="red",pch=0.02)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+points(CHR1_SNP$phys,rep(0,dim(CHR1_SNP)[1]), col="red",cex=0.02)
+points(CHR1_SNP$phys,rep(0,dim(CHR1_SNP)[1]), col="red",cex=0.2)
+points(CHR1_SNP$phys,rep(0,dim(CHR1_SNP)[1]), col="red",cex=0.6)
+points((CHR1_SNP$phys)/1000000,rep(0,dim(CHR1_SNP)[1]), col="red",cex=0.6)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+points((CHR1_SNP$phys)/1000000,rep(0,dim(CHR1_SNP)[1]), col="red",cex=0.3,pch="|")
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)
+points((All_fam $phys)/1000000,rep(0,dim(All_fam)[1]), col="red",cex=0.3,pch="|")
+Cumul_chr_toAdd<-c(0,558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)
+head(All_fam)
+New_cum_phys_allFam<-NULL#
+for (j in 1:7){#
+	CHR_fam<-All_fam [grep(paste(j,"H",sep=""), All_fam[,3]),]#
+	New_phys<-CHR_fam[,4] + Cumul_chr_toAdd[j]#
+	New_cum_phys_allFam <-c(New_cum_phys_allFam , New_phys)#
+}
+head New_cum_phys_allFam
+head(New_cum_phys_allFam)
+All_fam_cumPositions<-cbind(All_fam, New_cum_phys_allFam)
+head(All_fam_cumPositions)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col="blue",cex=0.3,pch="|")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col="blue",cex=0.1)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col="blue",cex=0.1,pch="|")
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col=c("blue", alpha=0.3),cex=0.1,pch="|")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col=c("blue", alpha=0.3),cex=0.1,pch="|")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col=adjustcolor("blue", alpha.f = 0.3) ,cex=0.1,pch="|")
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col=adjustcolor("blue", alpha.f = 0.7) ,cex=0.3,pch="|")
+? adjustcolor
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(0,dim(All_fam_cumPositions)[1]), col=adjustcolor("blue", alpha.f = 0.2) ,cex=0.3,pch="|")
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(-1.5,dim(All_fam_cumPositions)[1]), col=adjustcolor("blue", alpha.f = 0.2) ,cex=0.3,pch="|")
+dim(Recombination_all)
+head(Recombination_all)
+par(new=T)
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,4], cex=0.4, col="red", pch=1)
+lines(Recombination_all[,8], Recombination_all[,4], cex=0.4, col="red", pch=1)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(-1.5,dim(All_fam_cumPositions)[1]), col="blue" ,cex=0.3,pch="|")#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)
+lines(Recombination_all[,8], Recombination_all[,4], cex=0.4, col="red", pch=1)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))
+par(new=T)
+plot(Recombination_all[,8], Recombination_all[,4], cex=0.4, col="red", pch=1)
+par(mar=c(4,5,4,5))#
+#
+plot((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylab="Mean recent recombination rate (cM/Mbp). ",xlab="Physical position (Mbp)",col="white", main="Historical and Recent recombination rate in 5 Kbp windows", ylim=c(-10,11))#
+options(scipen=999, "digits"=16)#
+END_window<-Recombination_all$Mbp + 5000/1000000#
+Space_covered<-as.matrix(cbind(Recombination_all$Mbp , END_window, rep("-10", length(END_window)), rep("11.5",length(END_window))))#
+colnames(Space_covered)<-c("Start","End","startY","endY")#
+rect(Space_covered[,1], Space_covered[,3], Space_covered[,2], Space_covered[,4], border=c(rep("seashell2", dim(Space_covered)[1])))#
+#
+lines((Rec_recomb_all $New_cum_phys)/1000000, Rec_recomb_all $MeanRecom,cex=0.2, ylim=c(-5,11))#
+points((All_fam_cumPositions $New_cum_phys_allFam)/1000000,rep(-1.5,dim(All_fam_cumPositions)[1]), col="blue" ,cex=0.3,pch="|")#
+#
+#Depict in blue SNPs in genes in recent recombination#
+#points((Rec_recomb_all_inGenes $New_cum_phys)/1000000, Rec_recomb_all_inGenes$spline,cex=0.2, col="blue")#
+### add Ancestral  recombination#
+par(new=T)#
+plot(Recombination_all$Mbp,Recombination_all[,5],axes=F, ylab=NA,xlab=NA, cex=0.1, col="red")#
+axis(side=4, col="red")#
+mtext(side=4, line=3, expression(paste("Per base pair historical recombination rate (",rho,")",sep="")))#
+lines(Recombination_all[CHR1_all,8], Recombination_all[CHR1_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR2_all,8], Recombination_all[CHR2_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR3_all,8], Recombination_all[CHR3_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR4_all,8], Recombination_all[CHR4_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR5_all,8], Recombination_all[CHR5_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR6_all,8], Recombination_all[CHR6_all,5], cex=0.4, col="red", pch=1)#
+lines(Recombination_all[CHR7_all,8], Recombination_all[CHR7_all,5], cex=0.4, col="red", pch=1)
+Cumul_chr<-c(558535432, 1326610456, 2026321570, 2673381728, 3343411888, 3926792401)#
+#
+for (p in 2:7){#
+				CHR_VCF<-Centromeres[grep(paste("chr",p,"H",sep=""), Centromeres[,1]),]#
+				#convert start and end position to Mbp#
+				start_pos<-(CHR_VCF[1,2]) #
+				end_pos<-(CHR_VCF[(dim(CHR_VCF)[1]),2])#
+				start_pos_cum<-(start_pos + Cumul_chr[p-1])/1000000#
+				end_pos_cum<-(end_pos + Cumul_chr[p-1])/1000000#
+				segments(start_pos_cum , -0.0025, end_pos_cum, -0.0025, lwd=3,col="orange")#
+				#axis(1, at=c(start_pos_cum :end_pos_cum), col="orange",las=1,lwd=0.3,labels=F)#
+		}#
+#
+# delimite chromosomes#
+abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="green", lty=2)
+head(Recombination_all)
+head(Rec_recomb_all)
+length(intersect(Recombination_all$Start_position, Rec_recomb_all$StartWindow ))
+rm(list=ls())#
+#
+library(gtools) #
+ # Import NAM parents gentypes after basic QC#
+ DATA<-read.table("~/Dropbox/SmithLab/NAM/Analysis/Exome_parents/HAPMAP_nucleotides/NAMparents/NAM78_QC_maf005_mis10_het10.txt",header=T,row.names=1)#
+ # Remove all markers with an UNKNOWN physical position#
+ DATA<-DATA[-c(grep("UN",row.names(DATA))),]#
+ # === Functions ============================================================================================================#
+#
+HETE<-function(dat){#
+	hetero<-length(which(dat =="HH"))/(length(which(!is.na(dat))))#
+	return(hetero)#
+}#
+#
+ConvertHHtoNA<-function(dat){#
+	dat[dat == 'HH']<-NA#
+	dat[dat == 'AA']<-"A"#
+	dat[dat == 'CC']<-"C"#
+	dat[dat == 'GG']<-"G"#
+	dat[dat == 'TT']<-"T"#
+	return(dat)#
+}#
+#
+MissingDATA<-function(dat){#
+	dat[is.na(dat)]<-"N"#
+	return(dat)#
+}
+samp_HETE<-apply(DATA, 2, HETE)#
+#
+if(length(which(samp_HETE >0.1)) >0){#
+	DATA_10hete<-DATA[,-c(which(samp_HETE >0.1))]#
+}else{DATA_10hete <-DATA}#
+#
+# Convert all hete sites to NA, and diploid gentypes to haploid calls, so we can treat the samples as haploid data.#
+#
+DATAnoHH<-as.data.frame(apply(DATA_10hete,2, ConvertHHtoNA))#
+ # order by chromosome name#
+ library(gtools)#
+ DATAnoHH_or<-DATAnoHH[mixedsort(row.names(DATAnoHH)),]#
+#
+# == Calculate cumulative physical position for all SNPs#
+  options(scipen=999, "digits"=10)#
+#get physical positions#
+Physical_positions<-NULL#
+for (j in 1:dim(DATAnoHH_or)[1]){Physical_positions<-c(Physical_positions,strsplit(as.character(row.names(DATAnoHH_or)[j]),"_")[[1]][2])}#
+ # END_CHROM<-c(312.837513, 245.697919, 393.532674 ,374.542350 ,394.310633 ,305.400481 ,355.061206, 291.998952 ,380.865482 ,289.164678 ,294.822070 ,288.558443,325.797516 ,331.426484)#
+ END_CHROM<-c(312837513, 245697919, 393532674 ,374542350 ,394310633 ,305400481 ,355061206, 291998952 ,380865482 ,289164678 ,294822070 ,288558443,325797516 ,331426484)#
+  #Reduce the size of the numbers by deviding each bp position by 10^6 (Mega bases)#
+  #Mbp<-round(as.numeric(Physical_positions)/1000000, digits=10)#
+  Mbp<-as.numeric(Physical_positions)#
+  Positions_phy_mbp<-cbind(row.names(DATAnoHH_or),Mbp )#
+  row.names(Positions_phy_mbp)<-Positions_phy_mbp[,1]#
+  head(Positions_phy_mbp)#
+  CHR1_1<-grep("1H1",row.names(Positions_phy_mbp))#
+  CHR1_2<-grep("1H2",row.names(Positions_phy_mbp))#
+  CHR2_1<-grep("2H1",row.names(Positions_phy_mbp))#
+  CHR2_2<-grep("2H2",row.names(Positions_phy_mbp))#
+  CHR3_1<-grep("3H1",row.names(Positions_phy_mbp))#
+  CHR3_2<-grep("3H2",row.names(Positions_phy_mbp))#
+  CHR4_1<-grep("4H1",row.names(Positions_phy_mbp))#
+  CHR4_2<-grep("4H2",row.names(Positions_phy_mbp))#
+  CHR5_1<-grep("5H1",row.names(Positions_phy_mbp))#
+  CHR5_2<-grep("5H2",row.names(Positions_phy_mbp))#
+  CHR6_1<-grep("6H1",row.names(Positions_phy_mbp))#
+  CHR6_2<-grep("6H2",row.names(Positions_phy_mbp))#
+  CHR7_1<-grep("7H1",row.names(Positions_phy_mbp))#
+  CHR7_2<-grep("7H2",row.names(Positions_phy_mbp))#
+  List_chr_parts<-c("CHR1_1","CHR1_2","CHR2_1", "CHR2_2", "CHR3_1", "CHR3_2", "CHR4_1", "CHR4_2", "CHR5_1", "CHR5_2", "CHR6_1", "CHR6_2", "CHR7_1", "CHR7_2")#
+  END_CHROM<-c(312837513, 245697919, 393532674 ,374542350 ,394310633 ,305400481 ,355061206, 291998952 ,380865482 ,289164678 ,294822070 ,288558443,325797516 ,331426484)#
+  #Calculate joint physical positions for both parts of a chromosome, then calculate Cumulative positons genome wide#
+  Positions_original<-Positions_phy_mbp[,2]#
+  Positions_original<-as.numeric(as.character(Positions_original))#
+  New_order_phy<-NULL#
+  for (C in 1:14){#
+    #Get the piece of lg to work with#
+    chrom_part<-Positions_original [get(List_chr_parts[C])]#
+    #if LG has not SNPs then go to the next#
+    if(length(chrom_part) == 0)next#
+    #only for the first CHR1_1 pass all the physical values as they are#
+    if(C == 1){#
+      New_order_phy <-chrom_part#
+    }else{#
+      PreviousLG<-Positions_original [get(List_chr_parts[(C-1)])]#
+      #bp til the end of previous chromosome part. If LG doesn't have any SNPs then the length missing equals the LGpart length#
+      if(length(PreviousLG) == 0){END_prevousLG<-END_CHROM[(C-1)] } else{#
+        END_prevousLG<-END_CHROM[(C-1)] - PreviousLG [length(PreviousLG)]#
+      }#
+      #how far along is the first bp in the new LG#
+      BpTilFirst<-chrom_part[1]#
+      #Total physical distance between the last and the first bp in two linkage groups#
+      TotalDist<-END_prevousLG+ BpTilFirst#
+      #Cumulative position first bp#
+      FirstBpNewLG<-New_order_phy[length(New_order_phy)]+TotalDist#
+      New_order_phy <-c(New_order_phy, FirstBpNewLG)#
+      for (m in 2:length(chrom_part)) {#
+        if(chrom_part[(m)] > chrom_part[(m-1)]) {#
+          #get the last value in the new order physical map and add the distance til the new SNP#
+          LastValueEntered<-New_order_phy[length(New_order_phy)]#
+          New_order_phy<-c(New_order_phy,(LastValueEntered + abs(chrom_part[m] - chrom_part[(m-1)])))} #
+      }	#
+    }	#
+  }#
+  Positions_phy_mbp_cumul<-cbind(Positions_phy_mbp,New_order_phy)#
+  names(Positions_phy_mbp_cumul)[3]<-"Cumulative_Bp"#
+  head(Positions_phy_mbp_cumul)#
+if (  identical(row.names(DATAnoHH_or),row.names(Positions_phy_mbp_cumul)) == FALSE)stop("Cannot combine physical positions with genotypes. SNPs in different order")#
+### Construct input for maxhapdir#
+# turn genotypes to have samples in rows#
+DATAnoHH_t<-as.data.frame(t(DATAnoHH_or))#
+#
+#Duplicate Genotypes to have two alleles representing each SNP#
+#DATAnoHH_t_diploid<-cbind(DATAnoHH_t, DATAnoHH_t)#
+#
+# Order by SNP name#
+#DATAnoHH_t_diploid_or<-DATAnoHH_t_diploid[,mixedsort(colnames(DATAnoHH_t_diploid))]
+for (y in 1:7){#
+		window_size<-5000#
+		minumum_snp_per_windows<-10#
+		# create an output directory for each chromosome#
+		dir.create(paste("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/Input/CHR",y,sep=""))#
+		DATAnoHH_or_chr<-DATAnoHH_t[,(grep(paste(y,"H",sep=""),colnames(DATAnoHH_t)))]#
+		#snp positions#
+		Positions_phy_mbp_cumul_chr<-Positions_phy_mbp_cumul[(grep(paste(y,"H",sep=""), Positions_phy_mbp_cumul[,1])),]#
+		#Convert positions to numeric#
+		Positions_location <-as.numeric(as.character(Positions_phy_mbp_cumul_chr[,3]))#
+		#Separate the positions in 10Kb windows#
+		START<-Positions_location[1]#
+		#record how many SNPs are per window#
+		TotalSNPs_all<-NULL#
+		while(START[length(START)] < Positions_location[length(Positions_location)]){#
+			END<-START[length(START)] + window_size#
+			#count number of SNPs in window. If less than 2, then extent window until next SNPs is found#
+			TotalSNPs<-length(which(Positions_location >= START[length(START)] & Positions_location <= END))#
+			TotalSNPs_all <-c(TotalSNPs_all, TotalSNPs)#
+			START<-c(START, (END+1))#
+		}#
+		# if last position is greater than the last bp, then remove this position from the START#
+		if (Positions_location[length(Positions_location)] < START[length(START)]){START<-START[-c(length(START))]}#
+		#Combine START positions with SNP count. Remove Start position if the window has less than 2 markers#
+		Combine_START_initial<-cbind(START, TotalSNPs_all)#
+		if (length(which(Combine_START_initial[,2] <minumum_snp_per_windows)) >0){#
+		Combine_START<-Combine_START_initial[-c(which(Combine_START_initial[,2] <minumum_snp_per_windows)),]#
+		}else{Combine_START<-Combine_START_initial}#
+		WINDOWS<-Combine_START[,1]#
+#
+		for (w in 1:length(WINDOWS)){#
+						if (WINDOWS[w] != WINDOWS[length(WINDOWS)]){#
+							SNPs_KEEP<-which (Positions_location >= WINDOWS[w] & Positions_location <= (WINDOWS[w] + window_size ))#
+							Genotypes_keep<-DATAnoHH_or_chr[,SNPs_KEEP]#
+							#represent NA with N#
+							GENOTYPES<-apply(Genotypes_keep,2, MissingDATA)#
+							# print out output#
+							FIRST<-t(c((dim(Genotypes_keep)[1]), (dim(Genotypes_keep)[2]))) #number of samples and number of markers#
+							THIRD<-c("Alleles",t(rep("?", (dim(Genotypes_keep)[2]))))#
+							PhysicalPositions <-Positions_phy_mbp_cumul_chr[SNPs_KEEP,3]#
+						}#
+						#for the last window go all the way to the end of the chromosome#
+						if (WINDOWS[w] == WINDOWS[length(WINDOWS)]){#
+							SNPs_KEEP<-which (Positions_location >= WINDOWS[w] & Positions_location <= Positions_location[length(Positions_location)])#
+							Genotypes_keep<-DATAnoHH_or_chr[,SNPs_KEEP]#
+							#represent NA with N#
+							GENOTYPES<-apply(Genotypes_keep,2, MissingDATA)#
+							# print out output#
+							FIRST<-t(c((dim(Genotypes_keep)[1]), (dim(Genotypes_keep)[2]))) #number of samples and number of markers#
+							THIRD<-c("Alleles",t(rep("?", (dim(Genotypes_keep)[2]))))#
+							PhysicalPositions <-Positions_phy_mbp_cumul_chr[SNPs_KEEP,3]			#
+						}#
+				INPUT_FILE<-paste("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/Input/CHR",y,"/NAM_77_parents_input_exhap_chr",y,"_part_",w,".txt",sep="")#
+				write.table(FIRST, INPUT_FILE,quote=F,row.names=F,col.names=F,sep="\t")#
+				write.table(t(PhysicalPositions), INPUT_FILE,quote=F,row.names=F,col.names=F,sep="\t", append=T)#
+				write.table(t(THIRD), INPUT_FILE,quote=F,row.names=F,col.names=F,sep="\t", append=T)#
+				write.table(GENOTYPES, INPUT_FILE , quote=F,row.names=T,col.names=F,sep="\t", append=T)#
+				#print out how many SNPs were in each window, and where the windows started. Each window is 10kb long#
+					#if the last window is the last of the chromosome, add a new row, with the position of the last SNP in the chromosome#
+					if (Combine_START[dim(Combine_START)[1],1]  == Combine_START_initial[dim(Combine_START_initial)[1],1]){#
+						 last_row<-data.frame(Positions_location[length(Positions_location)], "NA") #
+						 colnames(last_row)<-c("START","TotalSNPs_all")#
+						 Combine_START_final<-rbind(Combine_START, last_row)#
+					}#
+					if (Combine_START[dim(Combine_START)[1],1]  != Combine_START_initial[dim(Combine_START_initial)[1],1]){#
+						 last_row<-data.frame((Combine_START[dim(Combine_START)[1],1] +10000), "NA") #
+						 colnames(last_row)<-c("START","TotalSNPs_all")#
+						 Combine_START_final<-rbind(Combine_START, last_row)#
+					}#
+				Combine_START_complete<-cbind(c(1:dim(Combine_START_final)[1]), Combine_START_final)#
+				colnames(Combine_START_complete)<-c("Part_number","Start_position","Number_SNPs")#
+				write.table(Combine_START_complete,paste("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/Input/CHR",y,"/Number_SNP_window.txt",sep=""),quote=F,row.names=F,col.names=T,sep="\t")#
+			}#
+}
+Positions_location[1]
+for (y in 1:7){#
+		window_size<-5000#
+		minumum_snp_per_windows<-10#
+		# create an output directory for each chromosome#
+		dir.create(paste("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/Input/CHR",y,sep=""))#
+		DATAnoHH_or_chr<-DATAnoHH_t[,(grep(paste(y,"H",sep=""),colnames(DATAnoHH_t)))]#
+		#snp positions#
+		Positions_phy_mbp_cumul_chr<-Positions_phy_mbp_cumul[(grep(paste(y,"H",sep=""), Positions_phy_mbp_cumul[,1])),]#
+		#Convert positions to numeric#
+		Positions_location <-as.numeric(as.character(Positions_phy_mbp_cumul_chr[,3]))#
+		#Separate the positions in 10Kb windows#
+		#START<-Positions_location[1]#
+		START<-1#
+		#record how many SNPs are per window#
+		TotalSNPs_all<-NULL#
+		while(START[length(START)] < Positions_location[length(Positions_location)]){#
+			END<-START[length(START)] + window_size#
+			#count number of SNPs in window. If less than 2, then extent window until next SNPs is found#
+			TotalSNPs<-length(which(Positions_location >= START[length(START)] & Positions_location <= END))#
+			TotalSNPs_all <-c(TotalSNPs_all, TotalSNPs)#
+			START<-c(START, (END+1))#
+		}#
+		# if last position is greater than the last bp, then remove this position from the START#
+		if (Positions_location[length(Positions_location)] < START[length(START)]){START<-START[-c(length(START))]}#
+		#Combine START positions with SNP count. Remove Start position if the window has less than 2 markers#
+		Combine_START_initial<-cbind(START, TotalSNPs_all)#
+		if (length(which(Combine_START_initial[,2] <minumum_snp_per_windows)) >0){#
+		Combine_START<-Combine_START_initial[-c(which(Combine_START_initial[,2] <minumum_snp_per_windows)),]#
+		}else{Combine_START<-Combine_START_initial}#
+		WINDOWS<-Combine_START[,1]#
+#
+		for (w in 1:length(WINDOWS)){#
+						if (WINDOWS[w] != WINDOWS[length(WINDOWS)]){#
+							SNPs_KEEP<-which (Positions_location >= WINDOWS[w] & Positions_location <= (WINDOWS[w] + window_size ))#
+							Genotypes_keep<-DATAnoHH_or_chr[,SNPs_KEEP]#
+							#represent NA with N#
+							GENOTYPES<-apply(Genotypes_keep,2, MissingDATA)#
+							# print out output#
+							FIRST<-t(c((dim(Genotypes_keep)[1]), (dim(Genotypes_keep)[2]))) #number of samples and number of markers#
+							THIRD<-c("Alleles",t(rep("?", (dim(Genotypes_keep)[2]))))#
+							PhysicalPositions <-Positions_phy_mbp_cumul_chr[SNPs_KEEP,3]#
+						}#
+						#for the last window go all the way to the end of the chromosome#
+						if (WINDOWS[w] == WINDOWS[length(WINDOWS)]){#
+							SNPs_KEEP<-which (Positions_location >= WINDOWS[w] & Positions_location <= Positions_location[length(Positions_location)])#
+							Genotypes_keep<-DATAnoHH_or_chr[,SNPs_KEEP]#
+							#represent NA with N#
+							GENOTYPES<-apply(Genotypes_keep,2, MissingDATA)#
+							# print out output#
+							FIRST<-t(c((dim(Genotypes_keep)[1]), (dim(Genotypes_keep)[2]))) #number of samples and number of markers#
+							THIRD<-c("Alleles",t(rep("?", (dim(Genotypes_keep)[2]))))#
+							PhysicalPositions <-Positions_phy_mbp_cumul_chr[SNPs_KEEP,3]			#
+						}#
+				INPUT_FILE<-paste("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/Input/CHR",y,"/NAM_77_parents_input_exhap_chr",y,"_part_",w,".txt",sep="")#
+				write.table(FIRST, INPUT_FILE,quote=F,row.names=F,col.names=F,sep="\t")#
+				write.table(t(PhysicalPositions), INPUT_FILE,quote=F,row.names=F,col.names=F,sep="\t", append=T)#
+				write.table(t(THIRD), INPUT_FILE,quote=F,row.names=F,col.names=F,sep="\t", append=T)#
+				write.table(GENOTYPES, INPUT_FILE , quote=F,row.names=T,col.names=F,sep="\t", append=T)#
+				#print out how many SNPs were in each window, and where the windows started. Each window is 10kb long#
+					#if the last window is the last of the chromosome, add a new row, with the position of the last SNP in the chromosome#
+					if (Combine_START[dim(Combine_START)[1],1]  == Combine_START_initial[dim(Combine_START_initial)[1],1]){#
+						 last_row<-data.frame(Positions_location[length(Positions_location)], "NA") #
+						 colnames(last_row)<-c("START","TotalSNPs_all")#
+						 Combine_START_final<-rbind(Combine_START, last_row)#
+					}#
+					if (Combine_START[dim(Combine_START)[1],1]  != Combine_START_initial[dim(Combine_START_initial)[1],1]){#
+						 last_row<-data.frame((Combine_START[dim(Combine_START)[1],1] +10000), "NA") #
+						 colnames(last_row)<-c("START","TotalSNPs_all")#
+						 Combine_START_final<-rbind(Combine_START, last_row)#
+					}#
+				Combine_START_complete<-cbind(c(1:dim(Combine_START_final)[1]), Combine_START_final)#
+				colnames(Combine_START_complete)<-c("Part_number","Start_position","Number_SNPs")#
+				write.table(Combine_START_complete,paste("~/Documents/SmithLab/NAM/Analysis/AncestralRecombination/Input/CHR",y,"/Number_SNP_window.txt",sep=""),quote=F,row.names=F,col.names=T,sep="\t")#
+			}#
+}

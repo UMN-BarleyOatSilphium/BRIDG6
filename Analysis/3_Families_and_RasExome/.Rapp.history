@@ -1,0 +1,736 @@
+test<-read.table("~/Documents/SmithLab/NAM/Analysis/HAPMAP_sharedSNP_nuc/Pri_hmp_Ras_gbsExome/50missing/HAPMAP_originals/HR601S_shrSNP_hmp.txt",header=T,row.names=1)
+test[1:10,1:10]
+test[1,-c(1:3)]->dat
+table(dat)
+as.data.frame(dat)->dat
+head(dat)
+table(dat)
+table(as.matrix(dat))
+length(table(as.matrix(dat)))
+names(table(as.matrix(dat)))
+names(table(as.matrix(dat)))-> genotypes_options
+genotypes_options
+if(grep("CC", genotypes_options))
+{'YES'}
+genotypes_options<-c(genotypes_options,"AA")
+genotypes_options
+if(grep("CC", genotypes_options) & grep("AA", genotypes_options))
+{'YES'}
+if(grep("CC", genotypes_options) & grep("bb", genotypes_options)){'yes'}
+if(genotypes_options)
+if(genotypes_options)q
+if(length(grep("CC", genotypes_options))>0 & length(grep("bb", genotypes_options))>0){'yes'}
+if(length(grep("CC", genotypes_options))>0 & length(grep("AA", genotypes_options))>0){'yes'}
+table(as.matrix(dat))
+table(as.matrix(dat))->try
+grep("CC",names(try))
+try[grep("CC",names(try))]
+try[grep("CC",names(try))]*2
+RILs_ras_complete_RasBased<-read.table("~/Desktop/TEMP_AP.txt",header=T,row.names=1)
+RILs_ras_complete_RasBased [1:10,1:10]
+Summary_count<-function(dat){#
+ 	table_data<-table(data)#
+ 	#if only one type then is monomorphic and we leave it alone#
+ 	if (length(table_data) == 1){Count<-"mono"}#
+ 	#if there are two genotypes, check if both are homo, or one is hete.#
+ 	if(length(table_data) == 2){#
+ 		#if both homo:#
+ 		genotypes_options<-names(table_data)#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("2", genotypes_options))>0){#
+ 			maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-minHomo"}#
+ 		}#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}#
+ 	}#
+ 	#if there are three genotypes, count the maf#
+ 	if (length(table_data) == 3){#
+ 		maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-min3genotypes"}		#
+ 	}#
+ }
+Genotypes_family
+dim(RILs_ras_complete_RasBased)
+n<-1
+Family<-read.table("~/Desktop/List_Fam_afterQC.txt",header=F)
+dim(Family)
+Position_indiv<-grep(Family[n,1], colnames(RILs_ras_complete_RasBased))
+Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]
+dim(Genotypes_family)
+Genotypes_family[1:10,1:10]
+Summary_count<-function(dat){#
+ 	table_data<-table(data)#
+ 	#if only one type then is monomorphic and we leave it alone#
+ 	if (length(table_data) == 1){Count<-"mono"}#
+ 	#if there are two genotypes, check if both are homo, or one is hete.#
+ 	if(length(table_data) == 2){#
+ 		#if both homo:#
+ 		genotypes_options<-names(table_data)#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("2", genotypes_options))>0){#
+ 			maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-minHomo"}#
+ 		}#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}#
+ 	}#
+ 	#if there are three genotypes, count the maf#
+ 	if (length(table_data) == 3){#
+ 		maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-min3genotypes"}		#
+ 	}#
+ 	return(Count)#
+ }
+Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)
+Summary_count<-function(dat){#
+ 	table_data<-table(dat)#
+ 	#if only one type then is monomorphic and we leave it alone#
+ 	if (length(table_data) == 1){Count<-"mono"}#
+ 	#if there are two genotypes, check if both are homo, or one is hete.#
+ 	if(length(table_data) == 2){#
+ 		#if both homo:#
+ 		genotypes_options<-names(table_data)#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("2", genotypes_options))>0){#
+ 			maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-minHomo"}#
+ 		}#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}#
+ 	}#
+ 	#if there are three genotypes, count the maf#
+ 	if (length(table_data) == 3){#
+ 		maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-min3genotypes"}		#
+ 	}#
+ 	return(Count)#
+ }
+Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)
+head(Summary_SNP_state)
+Summary_count<-function(dat){#
+ 	table_data<-table(dat)#
+ 	#if only one type then is monomorphic and we leave it alone#
+ 	if (length(table_data) == 1){Count<-"mono"}else{Count<-"good"}	#
+ 	#if there are two genotypes, check if both are homo, or one is hete.#
+ 	if(length(table_data) == 2){#
+ 		#if both homo:#
+ 		genotypes_options<-names(table_data)#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("2", genotypes_options))>0){#
+ 			maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-minHomo"}else{Count<-"good"}	#
+ 		}#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}else{Count<-"good"}	#
+ 	}#
+ 	#if there are three genotypes, count the maf#
+ 	if (length(table_data) == 3){#
+ 		maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-min3genotypes"}else{Count<-"good"}		#
+ 	}#
+ 	return(Count)#
+ }
+Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)
+Summary_SNP_state
+table(as.matrix(Genotypes_family[1,]))
+table(as.matrix(Genotypes_family[2,]))
+table(as.matrix(Genotypes_family[6,]))
+table(as.matrix(Genotypes_family[15,]))
+Summary_count<-function(dat){#
+ 	table_data<-table(dat)#
+ 	#if only one type then is monomorphic and we leave it alone#
+ 	if (length(table_data) == 1){Count<-"mono"}else{Count<-"good"}	#
+ 	#if there are two genotypes, check if both are homo, or one is hete.#
+ 	if(length(table_data) == 2){#
+ 		#if both homo:#
+ 		genotypes_options<-names(table_data)#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("2", genotypes_options))>0){#
+ 			maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-minHomo"}else{Count<-"good"}	#
+ 		}#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}else{Count<-"good"}	#
+ 		if(length(grep("2", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}else{Count<-"good"}	#
+ 	}#
+ 	#if there are three genotypes, count the maf#
+ 	if (length(table_data) == 3){#
+ 		maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-min3genotypes"}else{Count<-"good"}		#
+ 	}#
+ 	return(Count)#
+ }
+Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)
+table(as.matrix(Genotypes_family[15,]))
+Summary_SNP_state [15]
+Summary_SNP_state
+as.data.frame(Summary_SNP_state)
+which(row.names(as.data.frame(Summary_SNP_state)) =="1H1_277656")
+table(as.matrix(Genotypes_family[37,]))
+which(row.names(as.data.frame(Summary_SNP_state)) =="1H1_522744")
+table(as.matrix(Genotypes_family[62,]))
+which(row.names(as.data.frame(Summary_SNP_state)) =="1H1_941371")
+table(as.matrix(Genotypes_family[93,]))
+dim(Genotypes_family)
+Genotypes_family[93,]
+which(Summary_SNP_state == "replace-minHomo" | Summary_SNP_state == "replace-min3genotypes")
+grep("replace-minHomo | replace-min3genotypes", Summary_SNP_state)
+grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)
+Summary_SNP_state [grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)]
+names(Summary_SNP_state [grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)])
+paste(names(Summary_SNP_state [grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)]),collapse="|")
+grep( paste(names(Summary_SNP_state [grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)]),collapse="|"), row.names(Genotypes_family))
+grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)
+i<-2
+Genotypes_family[i]
+head(Summary_SNP_state)
+Genotypes_family[i,]
+table(Genotypes_family[i,])
+table(as.matrix(Genotypes_family[i,]))
+table_fam<-table(as.matrix(Genotypes_family[i,]))
+which(names(table_fam) == 0)
+min(table_fam [which(names(table_fam) == 0)], table_fam[which(names(table_fam) == 2)])
+if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele == 0}else{maf_allele == 2}
+if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}
+maf_allele
+Genotypes_family[i,]->TEST
+which(TEST[1,c(1,3)] == 0)
+which(TEST[1,c(1,3,5,6)] == 0)
+which(TEST[1,c(1,3,5,6)] == 2)
+TEST[1,c(1,3,5,6)]
+TEST
+colnames(which(TEST[1,c(1,3,5,6)] == 2))
+names(which(TEST[1,c(1,3,5,6)] == 2))
+names(TEST [1,which(TEST[1,c(1,3,5,6)] == 2)])
+Genotypes_family
+which(RILs_ras_complete_RasBased[i, Position_indiv] == maf_allele)
+which(Genotypes_family[i, ] == maf_allele)
+names(Genotypes_family[i,which(Genotypes_family[i, ] == maf_allele)])
+i
+Genotypes_family[1:10,1:10]
+names(Genotypes_family[i,which(Genotypes_family[i, ] == maf_allele)])
+which(Genotypes_family[i, ] == maf_allele)
+names(Genotypes_family[,which(Genotypes_family[i, ] == maf_allele)])
+which(Genotypes_family[i, ] == maf_allele)
+names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)])
+paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|")
+RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))]
+RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA
+Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]
+Genotypes_family1:10,1:10
+Genotypes_family[1:10,1:10]
+grep("replace-hete", Summary_SNP_state)
+Genotypes_family[15,]
+Genotypes_family[21,]
+maf_allele<-1
+RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))]
+j<-15
+RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))]
+which(Genotypes_family[j, ] == maf_allele)
+grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|")
+, colnames(RILs_ras_complete_RasBased)
+)
+j
+RILs_ras_complete_RasBased [j:16, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))]
+RILs_ras_complete_RasBased[14:16,5736:5738]
+for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)){#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state)){#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+Position_indiv<-grep(Family[n,1], colnames(RILs_ras_complete_RasBased))#
+	  		Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]#
+	  		# Estimate the number of minor alelles per family. if <5 then convert it to NA. Do the same if seg only hete and one homo.#
+	  		Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)#
+	  		#replace with NA when minor alelle <5 count#
+	  		for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)){#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state)){#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+Genotypes_family
+Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)
+for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)){#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA
+table_fam
+Genotypes_family
+table(as.matrix(Genotypes_family[i,]))
+Genotypes_family[i,]
+Genotypes_family[1,]
+table(Genotypes_family[1,])
+table(as.matrix(Genotypes_family[1,]))
+table(as.matrix(Genotypes_family[i,]))
+i
+table(Genotypes_family[2,])
+Genotypes_family[2,]
+dim(table_fam)
+table(Genotypes_family[2,])
+table(Genotypes_family[1,])
+dim(table(as.matrix(Genotypes_family[1,])))
+for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)){#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state)){#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)){#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}
+c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state)
+c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))
+(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))
+for ( i in (grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}
+for ( j in c(grep("replace-hete", Summary_SNP_state)){#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+c(grep("replace-hete", Summary_SNP_state))
+for ( j in (grep("replace-hete", Summary_SNP_state))){#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+for ( j in (grep("replace-hete", Summary_SNP_state))){#
+	  			print j#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			print j#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+grep("replace-hete", Summary_SNP_state))
+(grep("replace-hete", Summary_SNP_state))
+for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}
+for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}
+RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))]
+j
+RILs_ras_complete_RasBased [21, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))]
+RILs_ras_complete_RasBased<-read.table("~/Desktop/TEMP_AP.txt",header=T,row.names=1)
+Position_indiv<-grep(Family[n,1], colnames(RILs_ras_complete_RasBased))
+Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]
+Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)
+head(Summary_SNP_state)
+grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))
+(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))
+Genotypes_family[2,]
+for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}
+which(colnames(RILs_ras_complete_RasBased)=="HR601S029")
+RILs_ras_complete_RasBased[2,5727]
+i
+i<-2
+table_fam<-table(as.matrix(Genotypes_family[i,]))
+table_fam
+RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))]
+names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)
+]
+)
+i
+i<-6
+table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next #leave monomorphic SNPs alone#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}
+names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)])
+head(Genotypes_family)
+Genotypes_family[6,]
+table(as.matrix(Genotypes_family[6,]))
+rm(list=ls())
+RILs_ras_complete_RasBased<-read.table("/Volumes/login.msi.umn.edu (agonzale)/Projects/NAM/Analysis/Fileter80missing/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH.txt",header=T,row.names=1)
+Family<-read.table("~/Desktop/List_Fam_afterQC.txt",header=F)#
+#
+ #Function to identify the SNPs that we need to replace genotypes by NA per family.#
+ Summary_count<-function(dat){#
+ 	table_data<-table(dat)#
+ 	#if only one type then is monomorphic and we leave it alone#
+ 	if (length(table_data) == 1){Count<-"mono"}else{Count<-"good"}	#
+ 	#if there are two genotypes, check if both are homo, or one is hete.#
+ 	if(length(table_data) == 2){#
+ 		#if both homo:#
+ 		genotypes_options<-names(table_data)#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("2", genotypes_options))>0){#
+ 			maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-minHomo"}else{Count<-"good"}	#
+ 		}#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}else{Count<-"good"}	#
+ 		if(length(grep("2", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}else{Count<-"good"}	#
+ 	}#
+ 	#if there are three genotypes, count the maf#
+ 	if (length(table_data) == 3){#
+ 		maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-min3genotypes"}else{Count<-"good"}		#
+ 	}#
+ 	return(Count)#
+ }#
+ for (n in 2:dim(Family)[1]){#
+	  if (Family[n,1] != "HR632_HR651" & Family[n,1] != "HR648_HR649_HR650"){#
+	  		# grab all individuals in the family#
+	  		Position_indiv<-grep(Family[n,1], colnames(RILs_ras_complete_RasBased))#
+	  		Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]#
+	  		# Estimate the number of minor alelles per family. if <5 then convert it to NA. Do the same if seg only hete and one homo.#
+	  		Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)#
+	  		#replace with NA when minor alelle <5 count#
+	  		for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next #leave monomorphic SNPs alone#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}#
+	  }#
+	  if(Family[n,1] == "HR632_HR651"){#
+	  		  		# grab all individuals in the family#
+	  		Position_indiv<-grep("HR632|HR651", colnames(RILs_ras_complete_RasBased))#
+	  		Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]#
+	  		# Estimate the number of minor alelles per family. if <5 then convert it to NA. Do the same if seg only hete and one homo.#
+	  		Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)#
+	  		#replace with NA when minor alelle <5 count#
+	  		for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next #leave monomorphic SNPs alone#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}#
+	  }#
+	  	  if(Family[n,1] =="HR648_HR649_HR650"){#
+	  		  		# grab all individuals in the family#
+	  		Position_indiv<-grep("HR648|HR649|HR650", colnames(RILs_ras_complete_RasBased))#
+	  		Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]#
+	  		# Estimate the number of minor alelles per family. if <5 then convert it to NA. Do the same if seg only hete and one homo.#
+	  		Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)#
+	  		#replace with NA when minor alelle <5 count#
+	  		for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next #leave monomorphic SNPs alone#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}#
+	  }#
+ }#
+#
+#write.table(RILs_ras_complete_RasBased,"/home/smithkp/agonzale/Projects/NAM/Analysis/Fileter80missing/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH_naMAF.txt",quote=F,row.names=T,col.names=T,sep="\t")#
+write.table(RILs_ras_complete_RasBased,"~/Desktop/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH_naMAF.txt",quote=F,row.names=T,col.names=T,sep="\t")
+#Function to identify the SNPs that we need to replace genotypes by NA per family.#
+ Summary_count<-function(dat){#
+ 	table_data<-table(dat)#
+ 	#if only one type then is monomorphic and we leave it alone#
+ 	if (length(table_data) == 1){Count<-"mono"}else{Count<-"good"}	#
+ 	#if there are two genotypes, check if both are homo, or one is hete.#
+ 	if(length(table_data) == 2){#
+ 		#if both homo:#
+ 		genotypes_options<-names(table_data)#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("2", genotypes_options))>0){#
+ 			maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-minHomo"}else{Count<-"good"}	#
+ 		}#
+ 		if(length(grep("0", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}else{Count<-"good"}	#
+ 		if(length(grep("2", genotypes_options))>0 & length(grep("1", genotypes_options))>0){Count<-'replace-hete'}else{Count<-"good"}	#
+ 	}#
+ 	#if there are three genotypes, count the maf#
+ 	if (length(table_data) == 3){#
+ 		maf_count<-min(table_data[grep("0",names(table_data))], table_data[grep("0",names(table_data))])#
+ 			if(maf_count <5){Count<-"replace-min3genotypes"}else{Count<-"good"}		#
+ 	}#
+ 	return(Count)#
+ }#
+ for (n in 2:dim(Family)[1]){#
+	  if (Family[n,1] != "HR632_HR651" & Family[n,1] != "HR648_HR649_HR650"){#
+	  		# grab all individuals in the family#
+	  		Position_indiv<-grep(Family[n,1], colnames(RILs_ras_complete_RasBased))#
+	  		Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]#
+	  		# Estimate the number of minor alelles per family. if <5 then convert it to NA. Do the same if seg only hete and one homo.#
+	  		Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)#
+	  		#replace with NA when minor alelle <5 count#
+	  		for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			#print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next #leave monomorphic SNPs alone#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			#print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}#
+	  }#
+	  if(Family[n,1] == "HR632_HR651"){#
+	  		  		# grab all individuals in the family#
+	  		Position_indiv<-grep("HR632|HR651", colnames(RILs_ras_complete_RasBased))#
+	  		Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]#
+	  		# Estimate the number of minor alelles per family. if <5 then convert it to NA. Do the same if seg only hete and one homo.#
+	  		Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)#
+	  		#replace with NA when minor alelle <5 count#
+	  		for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			#print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next #leave monomorphic SNPs alone#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			#print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}#
+	  }#
+	  	  if(Family[n,1] =="HR648_HR649_HR650"){#
+	  		  		# grab all individuals in the family#
+	  		Position_indiv<-grep("HR648|HR649|HR650", colnames(RILs_ras_complete_RasBased))#
+	  		Genotypes_family<-RILs_ras_complete_RasBased[, Position_indiv]#
+	  		# Estimate the number of minor alelles per family. if <5 then convert it to NA. Do the same if seg only hete and one homo.#
+	  		Summary_SNP_state<-apply(Genotypes_family,1, Summary_count)#
+	  		#replace with NA when minor alelle <5 count#
+	  		for ( i in c(grep("replace-minHomo|replace-min3genotypes", Summary_SNP_state))){#
+	  			#print (i)#
+	  			table_fam<-table(as.matrix(Genotypes_family[i,]))#
+	  			#find which allele is minor#
+	  			if(dim(table_fam) <1)next #leave monomorphic SNPs alone#
+	  			if (table_fam [which(names(table_fam) == 0)]< table_fam[which(names(table_fam) == 2)]){maf_allele <- 0}else{maf_allele <- 2}#
+	  			RILs_ras_complete_RasBased [i, grep(paste(names(Genotypes_family[which(Genotypes_family[i, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+	  			}#
+	  		#replace with NA when segregation only hete and one homo. set to NA all hetes.#
+	  		for ( j in c(grep("replace-hete", Summary_SNP_state))){#
+	  			#print (j)#
+	  			maf_allele<-1#
+	  			  RILs_ras_complete_RasBased [j, grep(paste(names(Genotypes_family[which(Genotypes_family[j, ] == maf_allele)]), collapse="|"), colnames(RILs_ras_complete_RasBased))] <-NA#
+				}#
+	  }#
+ }#
+#
+#write.table(RILs_ras_complete_RasBased,"/home/smithkp/agonzale/Projects/NAM/Analysis/Fileter80missing/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH_naMAF.txt",quote=F,row.names=T,col.names=T,sep="\t")#
+write.table(RILs_ras_complete_RasBased,"~/Desktop/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH_naMAF.txt",quote=F,row.names=T,col.names=T,sep="\t")
+DATA<-RILs_ras_complete_RasBased
+DATA[1:10,1:10]
+MISSING_SNP<-function(dat){#
+			missing<-length(dat[is.na(dat)])/(length(dat))#
+			return(missing)#
+			}
+Missing_count<-apply(DATA,1, MISSING_SNP)#
+#
+if (length(which(Missing_count >0.80)) >0){#
+	DATA_80mis<-DATA[-c(which(Missing_count >0.80)),]#
+}else{DATA_80mis<-DATA}#
+NAM<-as.data.frame(t(DATA_80mis)) #164994 SNPs  and 5775 ind if only good samples kept#
+#
+IMPUTATION<-function(dat){#
+	dat<-dat#
+	MISSING<-which(is.na(dat))#
+	if (length(MISSING)>0){#
+		for (i in 1:length(MISSING)){#
+			dat<-dat#
+#
+			#check if the value to the left of the missing one was missing before, if so, the new value has been already imputed too and we can move to the next missing#
+			if( i>1){#
+				if(MISSING[i] - MISSING[i-1] == 1) next#
+			}#
+			#if (length(which(MISSING == (MISSING[i-1]))) > 0) next			#
+			Left<-NA#
+			Right<-NA#
+			if( is.na(Left)){#
+				#if the first position is already NA#
+				if(MISSING[i] == 1){LEFT<-NA}#
+				else{#
+					PositionToLeft<-(MISSING[i]-1)#
+					Left<-dat[PositionToLeft]#
+					LEFT<-Left#
+					}#
+			}else{LEFT<-NA}#
+			# moving to the right to find the next no-missing value, moving 20 SNPs to the right.#
+			if( is.na(Right)){#
+				if(is.na(MISSING[i+20])){#
+					Segment<-c(MISSING[i]:length(dat))#
+				}#
+				if(!is.na(MISSING[i+20])){#
+					Segment<-c(MISSING[i]:(MISSING[i+20]))#
+				}#
+				allSNPs<-dat[c(Segment)]#
+					#if among bases all the way to the end of the chromosome there is a non-NA segment#
+					if (length(which(!is.na(allSNPs))) > 0){#
+					Position_firstNoNA<-Segment [which(!is.na(allSNPs))[1]]#
+					# if the next known genotype is more than 20 SNP down the line, leave SNP as NA#
+					if( length(which(!is.na(allSNPs))) >0){#
+					Pos_noNA_right<-Segment [which(!is.na(allSNPs))[1]]#
+					#Genotype of markers in the right#
+						Right<-dat[Position_firstNoNA]#
+						RIGHT<-Right	#
+						}#
+					}else{RIGHT<-NA}  # when we get a non-missing genotype, then assign it as our franklin marker. If all SNPs are missing then assign NA to the right, this could happend at the end of chromosomes.#
+			}else{RIGHT<-Right}#
+		### ======= Imputing =============================================#
+			# Check that both frankling markers are different from NA. If either of them are NA, then skip to next missing value#
+			if ((is.na(LEFT) | is.na(RIGHT)) == FALSE){#
+				#if both markers are not-NA  Check the state of frankling markers, and obeying the rules fill in the blanks#
+				# Rule 1. If two frankling markers are 0 (donor lines), then impute middle with 0#
+				if(LEFT == 0 & RIGHT==0){#
+					dat[c(MISSING[i]: (Position_firstNoNA-1))]<-0#
+				}#
+				# Rule 2. If two frankling markers are 2 (Rasmsson), then impute middle with 2#
+				if(LEFT == 2 & RIGHT==2){#
+					dat[c(MISSING[i]: (Position_firstNoNA-1))]<-2#
+				}#
+				# Rule 3. If one markers is homozygous (0, donor) and the other is hete, then impute middle with 0.5#
+				if((LEFT == 0 & RIGHT==1) | (LEFT == 1 & RIGHT==0)){#
+					dat[c(MISSING[i]: (Position_firstNoNA-1))]<-1 #0.5#
+				}#
+				# Rule 4. If one markers in homozygous (2, Ras)and the other is hete, then impute middle with 1.5#
+				if((LEFT == 2 & RIGHT==1) | (LEFT == 1 & RIGHT==2)){#
+					dat[c(MISSING[i]: (Position_firstNoNA-1))]<-1 #1.5#
+				}#
+				# Rule 5. If two markers are Hete then impute middle with 1 (HETE)#
+				if(LEFT == 1 & RIGHT==1){#
+					dat[c(MISSING[i]: (Position_firstNoNA-1))]<-1#
+				}#
+				# Rule 6. If one marker is Ras and the other is Donor fill in with 1 (hete)#
+				if((LEFT == 0 & RIGHT==2) | (LEFT == 2 & RIGHT==0)){#
+					dat[c(MISSING[i]: (Position_firstNoNA-1))]<-1#
+				}#
+			dat<-dat	#
+			}else {dat[MISSING[i]]<-NA} # if left or right markers are NA then leave site as NA #
+		}#
+	}else{dat<-dat}#
+#
+return(dat)	#
+}#
+#
+# Since haplotypes are independent between chromosomes, we will impute chr by chr, and not impute LG8#
+#
+CHR1<-NAM[,grep("1H",colnames(NAM))]#
+CHR2<-NAM[,grep("2H",colnames(NAM))]#
+CHR3<-NAM[,grep("3H",colnames(NAM))]#
+CHR4<-NAM[,grep("4H",colnames(NAM))]#
+CHR5<-NAM[,grep("5H",colnames(NAM))]#
+CHR6<-NAM[,grep("6H",colnames(NAM))]#
+CHR7<-NAM[,grep("7H",colnames(NAM))]#
+CHRun<-NAM[,grep("UN",colnames(NAM))]#
+for ( c in 1:7){#
+	data<-get(paste("CHR",c,sep=""))#
+	data_IMPUTED<-as.data.frame(t(apply(data,1,IMPUTATION)))#
+	assign(paste("Imputed_chr",c,sep=""), data_IMPUTED)#
+}#
+IMPUTED_NAM<-cbind(Imputed_chr1, Imputed_chr2, Imputed_chr3, Imputed_chr4, Imputed_chr5, Imputed_chr6, Imputed_chr7 , CHRun)#
+t_IMPUTED_NAM<-as.data.frame(t(IMPUTED_NAM))#
+#write.table(t_IMPUTED_NAM, "/home/smithkp/agonzale/Projects/NAM/Analysis/Fileter80missing/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH_naMAF_imputed.txt", quote=F,row.names=T,col.names=T,sep="\t")#
+#
+write.table(t_IMPUTED_NAM, "~/Desktop/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH_naMAF_imputed.txt", quote=F,row.names=T,col.names=T,sep="\t")
+ls()
+for ( c in 3:7){#
+	data<-get(paste("CHR",c,sep=""))#
+	data_IMPUTED<-as.data.frame(t(apply(data,1,IMPUTATION)))#
+	assign(paste("Imputed_chr",c,sep=""), data_IMPUTED)#
+}
+IMPUTED_NAM<-cbind(Imputed_chr1, Imputed_chr2, Imputed_chr3, Imputed_chr4, Imputed_chr5, Imputed_chr6, Imputed_chr7 , CHRun)#
+t_IMPUTED_NAM<-as.data.frame(t(IMPUTED_NAM))
+write.table(t_IMPUTED_NAM, "~/Desktop/NAM_MNS_July2016_DP5_GQ30_mis80_5775ind.recode_transformedHETE_toNA_HH_hmp_withRAShomo_rasBased_naExcessHH_naMAF_imputed.txt", quote=F,row.names=T,col.names=T,sep="\t")
+Missing_count<-apply(DATA,1, MISSING_SNP)#
+#
+if (length(which(Missing_count >0.30)) >0){#
+	DATA_80mis<-DATA[-c(which(Missing_count >0.30)),]#
+}else{DATA_80mis<-DATA}
+dim(NAM)
+dim(DATA_80mis)
+x<-data.frame(a,b,c,d)
+x<-data.frame(1,2,3,4)
+y<-data.frame(2,4)
+merge(x,y)
+cbind(x,y)
+x
+y
+row.names(x)<-c("a","b","c","d")
+t(x)->x
+row.names(x)<-c("a","b","c","d")
+t(y)->y
+row.names(y)<-c("b","d")
+cbind.fill(x,y)
+cbind.fill <- function(...){#
+    nm <- list(...) #
+    nm <- lapply(nm, as.matrix)#
+    n <- max(sapply(nm, nrow)) #
+    do.call(cbind, lapply(nm, function (x) #
+        rbind(x, matrix(, n-nrow(x), ncol(x))))) #
+}
+cbind.fill(x,y)
+cbind.fill(x,y)
+x
+y
+require(plyr) # requires plyr for rbind.fill()#
+cbind.fill <- function(...) {                                                                                                                                                       #
+  transpoted <- lapply(list(...),t)                                                                                                                                                 #
+  transpoted_dataframe <- lapply(transpoted, as.data.frame)                                                                                                                         #
+  return (data.frame(t(rbind.fill(transpoted_dataframe))))                                                                                                                          #
+}
+cbind.fill(x,y)
+PARENTS[,grep(Families[i,2])]
+get(Parent_name)
