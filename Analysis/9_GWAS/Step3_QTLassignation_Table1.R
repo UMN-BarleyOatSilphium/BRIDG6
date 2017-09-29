@@ -84,29 +84,30 @@ THR =  -log10(0.05 / ( nrow(Polytest) * (1-0.05)))
 
 for (n in 1:7){
   print(n)
-  # the first QTL is set to 1, use to digit numbers so 2.1 and 2.10 are differentiated
+  # the first QTL is set to 2_1, use to digit numbers so 2.1 and 2.10 are differentiated
   x<-1
   Polytest_pos_chr<-Polytest_pos[grep(paste(n,"H",sep=""),row.names(Polytest_pos)),]
   
   # Get a vector of positions of p-values that are significant
   Pos_sig_pval<-Polytest_pos_chr[which(Polytest_pos_chr$pval >= THR),"Cumul_Pos"]
-
+  
   if(length(Pos_sig_pval)>0){
-  # Identify the position of the first significant marker and the position of +/- LENGTH
-  Bottom<-Pos_sig_pval[1] - LENGTH
-  Top<-Pos_sig_pval[1] + LENGTH
-
-  while(!is.na(Bottom <= (Pos_sig_pval[length(Pos_sig_pval)]))){
-    ### If the positions between Bottom and Top are NA for QTL assignation, then assign a new QTL. Otherwise, assign whichever QTL already exist for the first SNP.
-    # SNPs in QTL
-    SNP_qtl<-which(Polytest_pos_chr$Cumul_Pos >= Bottom & Polytest_pos_chr$Cumul_Pos <= Top)
-    if (is.na(Polytest_pos_chr[SNP_qtl[1],"QTL_assig"])){QTLnumber<-(paste(n,"_",x,sep="")) ; x<-(x+1)}else{QTL_assig<-Polytest_pos_chr[SNP_qtl[1],"QTL_assig"]}
-    Polytest_pos_chr[SNP_qtl,"QTL_assig"]<-QTLnumber
-    # move to the next significant p-value outside the last QTL
-    Pos_sig_pval_new<-Pos_sig_pval[which(Pos_sig_pval >Top)[1]]
+    # Identify the position of the first significant marker and the position of +/- LENGTH
+    Bottom<-Pos_sig_pval[1] - LENGTH
+    Top<-Pos_sig_pval[1] + LENGTH
     
-    Bottom<-Pos_sig_pval_new -LENGTH
-    Top<-Pos_sig_pval_new + LENGTH
+    START_QTL<-Pos_sig_pval[length(Pos_sig_pval)]
+    while(!is.na(Bottom <= (Pos_sig_pval[length(Pos_sig_pval)]))){
+      ### If the positions between Bottom and Top are NA for QTL assignation, then assign a new QTL. Otherwise, assign whichever QTL already exist for the first SNP.
+      # SNPs in QTL
+      SNP_qtl<-which(Polytest_pos_chr$Cumul_Pos >= Bottom & Polytest_pos_chr$Cumul_Pos <= Top)
+      if (is.na(Polytest_pos_chr[SNP_qtl[1],"QTL_assig"])){QTLnumber<-(paste(n,"_",str_pad(x, 2, pad = "0"),sep="")) ; x<-(x+1)}else{QTL_assig<-Polytest_pos_chr[SNP_qtl[1],"QTL_assig"]}
+      Polytest_pos_chr[SNP_qtl,"QTL_assig"]<-QTLnumber
+      # move to the next significant p-value outside the last QTL
+      Pos_sig_pval_new<-Pos_sig_pval[which(Pos_sig_pval >Top)[1]]
+      
+      Bottom<-Pos_sig_pval_new -LENGTH
+      Top<-Pos_sig_pval_new + LENGTH
     }
   }else{Polytest_pos_chr<-Polytest_pos_chr}
   assign(paste("CHROM_",n,sep=""),Polytest_pos_chr)
@@ -115,24 +116,24 @@ for (n in 1:7){
 
 GenomeWide_QTLassigned<-rbind(CHROM_1, CHROM_2,CHROM_3,CHROM_4,CHROM_5, CHROM_6, CHROM_7)
 
-write.table(GenomeWide_QTLassigned,paste("/Users/agonzale/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/GenomeWide_QTLassigned_",LENGTH,".xls",sep=""),quote=F,row.names=T,col.names=T,sep="\t")
-  
+#write.table(GenomeWide_QTLassigned,paste("/Users/agonzale/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/GenomeWide_QTLassigned_",LENGTH,".xls",sep=""),quote=F,row.names=T,col.names=T,sep="\t")
+
 #########======== Table 1: average p-value for QTL and the total number of SNP in that QTL ============#####################
 
 # List of the number of QTL assigned
 QTL_all<-names(table(GenomeWide_QTLassigned[,2]))
-  
+
 QTLdescriptionTable<-matrix(NA,ncol=6,nrow=length(QTL_all))
 colnames(QTLdescriptionTable)<-c("QTL","Maximum -log(p)","Number of significant SNP","Total number of SNP in QTL region (5Mbp)","Max. Families segregating","Min. Families Segregating")
 for (i in 1:length(QTL_all)){
-  p_values<-GenomeWide_QTLassigned[grep(QTL_all[i],GenomeWide_QTLassigned$QTL_assig),"pval"]
+  p_values<-GenomeWide_QTLassigned[which(GenomeWide_QTLassigned$QTL_assig == QTL_all[i]),"pval"]
   QTLdescriptionTable[i,1]<-QTL_all[i]
   QTLdescriptionTable[i,2]<-round(max(p_values),2)
   QTLdescriptionTable[i,3]<-length(which(p_values >= THR))
   QTLdescriptionTable[i,4]<-length(p_values)
   
   # Get the max and minimum number of families for which a Significant SNP segregates in a QTL
-  data<-GenomeWide_QTLassigned[grep(QTL_all[i],GenomeWide_QTLassigned$QTL_assig),]
+  data<-GenomeWide_QTLassigned[which(GenomeWide_QTLassigned$QTL_assig == QTL_all[i]),]
   # get only significant SNPs in the QTL
   data_sig<-data[which(data$pval >= THR),(dim(data)[2]-87):dim(data)[2]]
   Segregation<-apply(data_sig,1, function(x) length(which(x >0)))
@@ -141,21 +142,55 @@ for (i in 1:length(QTL_all)){
   
 }
 
-write.table(QTLdescriptionTable,"/Users/agonzale/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/Summary_QTL_max.xls",quote=F,row.names=F,col.names=T,sep="\t")
+#write.table(QTLdescriptionTable,"/Users/agonzale/Documents/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/QTLassignation_ANA/Summary_QTL_max.xls",quote=F,row.names=F,col.names=T,sep="\t")
 
 
 ####### ====== visualization of the QTL location ==========================================================================
-# Plot results
+# Import the position of known genes in barley
+Annotations<-read.csv("~/Dropbox/GITHUB/BRIDG6/Datasets/Annotations/FT_annotations_select.csv",sep=",")
 
-plot(GenomeWide_QTLassigned$Cumul_Pos/1000000, GenomeWide_QTLassigned$pval, cex=0.6, ylab="-lob(p-value)",xlab="Physical Position (Mbp)")
+#Remove Genes in unknown chromosome as the positions of these SNPs are random to the chromosome.
+
+Annotations_chr<-Annotations[-grep("UN", Annotations$Gene_Ch),]
+
+## Get genome-wide cumulative positions
+# cumulative positions until the end of each chromosome to be added to each chr. 
+CHROM_length<-c(0,558535432,1326610456,2026321570,2673381728,3343411888,3926792401,4584016401)
+
+Annotations_chr$Cumul_posStart<-rep(NA,dim(Annotations_chr)[1])
+Annotations_chr$Cumul_posEnd<-rep(NA,dim(Annotations_chr)[1])
+Annotations_chr$Cumul_posMid<-rep(NA,dim(Annotations_chr)[1])
+
+for (c in 1:7){
+  #cumul start
+  CumPos_start<-Annotations_chr[grep(paste(c,"H",sep=""), Annotations_chr$Gene_Ch), 5] + CHROM_length[c]
+  Annotations_chr[grep(paste(c,"H",sep=""), Annotations_chr$Gene_Ch),"Cumul_posStart"]<-CumPos_start
+  #cumul end
+  CumPos_end<-Annotations_chr[grep(paste(c,"H",sep=""), Annotations_chr$Gene_Ch), 6] + CHROM_length[c]
+  Annotations_chr[grep(paste(c,"H",sep=""), Annotations_chr$Gene_Ch),"Cumul_posEnd"]<-CumPos_end
+  #cumul mid point
+  CumPos_mid<-Annotations_chr[grep(paste(c,"H",sep=""), Annotations_chr$Gene_Ch), 7] + CHROM_length[c]
+  Annotations_chr[grep(paste(c,"H",sep=""), Annotations_chr$Gene_Ch),"Cumul_posMid"]<-CumPos_mid
+  
+}
+
+# Summary annotations
+Annotations_genes<-Annotations_chr[!is.na(Annotations_chr$Cumul_posStart),c(1,2,4,16,17,18)]
+
+# Plot results
+pdf("/Users/agonzale/Documents/SmithLab/NAM/write/Bridgs_edited_files_v2/ExtraFigs/GWAS_Genes.pdf",height=7, width=11)
+par(mar=c(5,4,4,4))
+#plot(GenomeWide_QTLassigned$Cumul_Pos/1000000, GenomeWide_QTLassigned$pval, cex=0.6, ylab="-log(p-value)",xlab="Physical Position (Mbp)",xaxt="n")
+plot(GenomeWide_QTLassigned$Cumul_Pos/1000000, GenomeWide_QTLassigned$pval, cex=0.6, ylab="-log(p-value)",xlab="Physical Position (Mbp)")
+
 abline(h=THR, col="red")
 
 # Color each QTL identified with a different color
 UNIQ_QTL<-unique(GenomeWide_QTLassigned[which(!is.na(GenomeWide_QTLassigned[,2])),2])
 # create nQTL colors
 palette(rainbow(length(UNIQ_QTL)))
-COLORS<-(palette(gray(seq(0,.9,len = 25)))) 
-
+#COLORS<-(palette(gray(seq(0,.9,len = 25)))) 
+COLORS<-rep(c("blue","red"), 12)
 # paint each QTL with a different color
 
 for (p in 1:length(UNIQ_QTL)){
@@ -165,5 +200,15 @@ for (p in 1:length(UNIQ_QTL)){
 
 # Set chromosome boundaries
 abline(v=c(558535432,1326610456,2026321570,2673381728,3343411888,3926792401)/1000000, col="gray", lty=2)
-
+legend("topright",col=c("gray","black"),pch=c(NA,1),lty=c(2,NA),legend=c("Chromosome boundary","SNP"))
+dev.off()
 print(paste("Total number of QTL:",length(UNIQ_QTL), sep=" "))
+
+# add the position of known genes associated with flowering time
+axis(side=1, at=c(Annotations_genes$Cumul_posMid/1000000), labels = FALSE)
+text(x=c(Annotations_genes$Cumul_posMid/1000000),  par("usr")[3], 
+     labels = Annotations_genes$Abrevation, srt = 90, xpd = T, cex=0.5)
+
+## qtlselect are the genes idetified in Table 2
+axis(side=1, at=c(qtlselect/1000000), labels = FALSE)
+text(x=c(qtlselect/1000000),  par("usr")[3],     labels = Table_SNPnearest[,5], srt = 90, xpd = T, cex=0.5)

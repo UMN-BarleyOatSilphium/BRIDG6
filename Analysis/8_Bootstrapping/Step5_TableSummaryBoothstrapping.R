@@ -23,7 +23,7 @@ Subsam1<-c("OUTPUT_familiesAllInd",	"OUTPUT_familiesEvenInd")
 
 ## 2. Boothstrapping by random individuals
 Subsam2<-c("OUTPUT_randomNoFam",	"OUTPUT_random_wFam")
-  SAMPLING2<-c("Random_264",	"Random_528",	"Random_968",	"Random_2012")
+  SAMPLING2<-c("Random_264",	"Random_528",	"Random_968",	"Random_2024")
 
 ## For each subsampling (100 runs) make a table of the number of times a QTL was identified
 

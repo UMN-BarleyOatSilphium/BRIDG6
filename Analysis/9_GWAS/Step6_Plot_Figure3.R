@@ -215,3 +215,4 @@ ggplot(data = arranged_effects_noNA, aes(x = BIN, y=factor(Fam_num), fill=value)
         axis.text.x = element_blank(), axis.ticks = element_blank(), panel.border = element_blank(), text = element_text(size = 14),
         panel.background = element_rect(color = "white"), panel.grid = element_blank(), legend.text = element_text(size = 14)) +
   scale_x_continuous(expand = c(0,0)) 
+

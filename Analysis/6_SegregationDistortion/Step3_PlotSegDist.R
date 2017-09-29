@@ -1,11 +1,11 @@
 # Author: Alex Ollhoff
-# Description: Plot segreagation distortion
+# Description: Plot Rasmusson contribution to homozygous genotypes
 ################################################################################################################
 rm(list=ls())
 library(ggplot2)
 library(dplyr)
 library(reshape2)
-Seg_dist <- read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/SNPdensity_and_segDist/88Fam_genmap_segDist_binned.txt", header = T)
+Seg_dist <- read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/SNPdensity_and_segDist/SegDist_091817/Output/88Fam_genmap_segDist_binned_AA.txt", header = T)
 
 # Separate chromsome number from bin label
 Chrom_num <- gsub("_[0-9]*","", row.names(Seg_dist))
@@ -113,6 +113,7 @@ Arranged_seg_dist <- Fam_seg_dist %>%
   arrange(variable)
 
 # Plot heat map of segregation distortion
+pdf("/Users/agonzale/Documents/SmithLab/NAM/write/Bridgs_edited_files_v2/Figures/Figure2_ParentalContributions.pdf",width=10,height=7)
 ggplot(data = Arranged_seg_dist, aes(x = bin, y=factor(variable), fill=as.numeric(value))) +
   labs(x = "Chromosome", y = "BRIDG Family") +
   facet_grid( Pop_location_sort ~ chrom, scales = "free", space = "free", switch = "both") +
@@ -121,23 +122,27 @@ ggplot(data = Arranged_seg_dist, aes(x = bin, y=factor(variable), fill=as.numeri
   theme(axis.text.y = element_blank(), strip.background = element_blank(), axis.text.x = element_blank(), axis.ticks = element_blank(), panel.border = element_blank(), panel.background = element_rect(color = "grey"), 
         panel.grid = element_blank(), text = element_text(size = 16), legend.text = element_text(size = 14), legend.title = element_text(size = 14), legend.position = "right") +
   geom_tile() 
+dev.off()
 # Export as device size landscape 7x12 Manuscripts/Figures/Seg_dist_bypopthenpheno
 ###########
 #visualize one chromosome for one population at the time
-#CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "5H" & Arranged_seg_dist$Pop_location == "Coastal Med." & Arranged_seg_dist$value >0.75 )
-CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "3H" & Arranged_seg_dist$Pop_location == "E. African" )
+CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "5H" & Arranged_seg_dist$Pop_location == "Coastal Med."  )
+#CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "3H" & Arranged_seg_dist$Pop_location == "E. African" )
+#CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "1H" )
 SEG_SEGMENTS<-Arranged_seg_dist[CHR5_OUTLIERS,]
-table(SEG_SEGMENTS[,1])
+
 
 # get the unmelted data and visualize it in excell
-Seg_dist_chr5<-Seg_dist[grep("CHR3",row.names(Seg_dist)),]
+Seg_dist_chr5<-Seg_dist[grep("CHR5",row.names(Seg_dist)),]
 write.table(Seg_dist_chr5,"~/Desktop/Seg_dist_chr3_eafric.xls",quote=F,row.names=T,col.names=T,sep="\t")
+
+HR645S<-SEG_SEGMENTS[which(SEG_SEGMENTS$variable == "HR645S"),]
 # get only segments 
 ggplot(data = SEG_SEGMENTS, aes(x = bin, y=factor(variable), fill=as.numeric(value))) +
   labs(x = "Chromosome", y = "BRIDG Family") +
   facet_grid( Pop_location_sort ~ chrom, scales = "free", space = "free", switch = "both") +
   #scale_fill_gradient2(high = "purple", low = "green", mid = "white", na.value = NA, midpoint = 0.50, guide = "colorbar", "Freuency of\nRasmusson Allele", limits = c(0.00, 1.00)) +
   scale_fill_distiller(palette = "PRGn", limits = c(0.00, 1.00), "Proportion\nRasmusson\nAllele", guide = "colorbar", labels = c("0.00", "0.25", "0.50", "0.75", "1.00"), na.value = "white") +
-  theme(axis.text.y = element_blank(), strip.background = element_blank(), axis.text.x = element_text(face="bold", color="#993333", size=6, angle=90), axis.ticks = element_blank(), panel.border = element_blank(), panel.background = element_rect(color = "grey"), 
+  theme(axis.text.y = element_text(face="bold", color="#993333", size=6), strip.background = element_blank(), axis.text.x = element_text(face="bold", color="#993333", size=6, angle=90), axis.ticks = element_blank(), panel.border = element_blank(), panel.background = element_rect(color = "grey"), 
         panel.grid = element_blank(), text = element_text(size = 16), legend.text = element_text(size = 14), legend.title = element_text(size = 14), legend.position = "right") +
   geom_tile() 

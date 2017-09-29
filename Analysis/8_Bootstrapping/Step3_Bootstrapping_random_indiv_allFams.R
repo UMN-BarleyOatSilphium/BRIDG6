@@ -82,7 +82,7 @@ FamMore25<-Count_ind_fam[which(as.numeric(as.character(Count_ind_fam[,2])) > 25)
 RESULTS_SIGNIF<-NULL
 SNPs_significant<-NULL
 ##### for bootstrapping even number of individuals per family
-TotalNumber<-c(264,528,968,2012)
+TotalNumber<-c(264,528,968,2024)
 for ( t in 1:length(TotalNumber)){
 TOTALrandomSamples<- TotalNumber[t]
 
@@ -91,7 +91,7 @@ dir.create(paste("/home/smithkp/agonzale/Projects/NAM/Analysis/GWAS_bootstrap/OU
 # Create a directory for plots
 dir.create(paste("/home/smithkp/agonzale/Projects/NAM/Analysis/GWAS_bootstrap/OUTPUT/Random_",TOTALrandomSamples,"/Plot", sep=""))
 # matrix of how many samples to sample per family in each escenario
-SUB_Sampling<-data.frame(c(264,528,968,2012),c(3,6,11,23))
+SUB_Sampling<-data.frame(c(264,528,968,2024),c(3,6,11,23))
 colnames(SUB_Sampling)<-c("TotalSize","IndPerFam")
 # for i number of runs
 for (i in 1:100){
