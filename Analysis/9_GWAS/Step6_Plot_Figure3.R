@@ -63,6 +63,7 @@ THR =  -log10(0.05 / ( nrow(RESULTS) * (1-0.05)))
 #THR =  -log10(0.05 / ( ncol(SNP_info_complete) * (1-0.05)))
 w = which((SNP_info_complete$pval) > (-log10(THR)) )
 
+pdf("~/Documents/SmithLab/NAM/write/Bridgs_edited_files_v2/Figures/Figure3c.pdf",height=3,width=11)
 # Simple manhattan, manuscript version
 ggplot(SNP_info_complete, aes(Cumulative_bp, pval)) +
   labs(x = "Chromosome (base pairs)", y = "-log(p-value)") +
@@ -74,6 +75,7 @@ ggplot(SNP_info_complete, aes(Cumulative_bp, pval)) +
   scale_y_continuous(expand = c(0,0), limits = c(0, 50), position = "right") +
   scale_x_continuous(expand = c(0,0)) +
   facet_grid( ~ Chrom_chr, scales = "free_x", switch = "x") 
+dev.off()
 # Export as 3x12 landscape deivce size BLUPs_GxE/Simple_man_hd
 # This warning message indicates that there are points above the limit on the y axis. Change using scale_y_continuous limits = c(0, my_new_limit)
 #Warning message:
@@ -206,6 +208,7 @@ arranged_effects$subpop_sort = factor(arranged_effects$subpop, levels = c('Centr
 arranged_effects_noNA <- filter(arranged_effects, Chrom_chr != "NA")
 
 # plot
+pdf("~/Documents/SmithLab/NAM/write/Bridgs_edited_files_v2/Figures/Figure3b.pdf",height=9,width=11)
 ggplot(data = arranged_effects_noNA, aes(x = BIN, y=factor(Fam_num), fill=value)) +
   labs(x = "Chromosome", y = "Family and\nSubpopulation") +
   facet_grid(subpop_sort ~ Chrom_chr, scales = "free", space = "free_y", switch = "both") +
@@ -215,4 +218,4 @@ ggplot(data = arranged_effects_noNA, aes(x = BIN, y=factor(Fam_num), fill=value)
         axis.text.x = element_blank(), axis.ticks = element_blank(), panel.border = element_blank(), text = element_text(size = 14),
         panel.background = element_rect(color = "white"), panel.grid = element_blank(), legend.text = element_text(size = 14)) +
   scale_x_continuous(expand = c(0,0)) 
-
+dev.off()
