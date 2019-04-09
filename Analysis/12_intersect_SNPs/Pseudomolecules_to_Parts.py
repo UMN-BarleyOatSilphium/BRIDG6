@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Convert from IPK full pseudomolecules to parts. Requires argparse."""
+"""Convert from IPK full pseudomolecules to parts. Requires argparse. Written by Li Lei in April 3 in St.Paul MN, adapted from the Kono script: "https://github.com/MorrellLAB/File_Conversions/blob/master/Pseudomolecules_to_Parts.py""
 
 import sys
 import argparse
