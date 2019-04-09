@@ -1,7 +1,7 @@
 #!/usr/bin/perl
-##by Li Lei, 20160613, in St.Paul;
-#this is to extract markers Chaochih is interested in!
-#usage: ./extraction_SNPs.pl ../data/WBDC_genotype_count_transposed#.txt ../data/all_2H_SNP_namesOnly.txt >all_2H_SNP_WBDC_genotype_count.txt
+##by Li Lei, 20190403, in St.Paul;
+#this is to intersect the markers with the three datasets.
+#usage: ./three_intersect.pl intersected_by_two_SNPsid third_sets_SNPid |grep "YES" >intersect_by_three_datasets
 use strict;
 use warnings;
 use Data::Dumper;
