@@ -10,7 +10,7 @@
 python script/Pseudomolecules_to_Parts.py --vcf data/sorted_all_9k_masked_90idt.vcf >results/sorted_all_9k_masked_90idt_parts.vcf
 ```
 
-## extract the SNPs_ids:
+## Extract the SNPs_ids:
 9k SNPS
 ```
 grep -v "#" sorted_all_9k_masked_90idt_parts.vcf| cut -f 1,2 >9k.SNPid
