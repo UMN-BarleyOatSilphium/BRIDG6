@@ -7,7 +7,7 @@ library(stringr)
 #===Bin chromosomes and estimate mean allele frequency of donor parent ===================================================================
 # =========== Calculate the proportion of Rasmusson allele (1- donor allele freq ) in windows of ... SNPs =====================================
 # Import table of frequency of donor allele
-DATA<-read.table("~/Documents/SmithLab/NAM/Analysis/SNPdensity_and_segDist/SegDist_091817/Output/88Fam_genmap_SNPdonorgenotypeFreqAA.txt", header=T, row.names=1 )
+DATA<-read.table("/home/agonzale/Downloads/88Fam_genmap_SNPdonorgenotypeFreqAA.txt", header=T, row.names=1 )
 
 # Separate by chromosomes
 
@@ -25,6 +25,8 @@ CHR_UN<-DATA[grep("UN", row.names(DATA)),]
 RESULTS_mean<-matrix(NA, ncol=dim(DATA)[2])
 colnames(RESULTS_mean)<-colnames(DATA)
 
+bin_info_total<-matrix(NA,ncol=3)
+colnames(bin_info_total)<-c("bin_name","start","end")
 CHRnames<-c("CHR1", "CHR2", "CHR3", "CHR4", "CHR5", "CHR6", "CHR7") # ignore the UNknown chrosmosome since we cannot group it by physical proximity
 
 
@@ -64,6 +66,8 @@ for (n in 1:length(CHRnames)){
     
     #row.names(MEAN)<-paste(CHRnames[n], "_", s, sep="")
     row.names(MEAN)<-paste(CHRnames[n], "_", str_pad(s, 4, pad = "0"), sep="")
+    bin_info<-data.frame(bin_name = paste(CHRnames[n], "_", str_pad(s, 4, pad = "0"), sep=""), start=row.names(SEGMENT)[1] ,end=row.names(SEGMENT)[dim(SEGMENT)[1]])
+    bin_info_total<-rbind(bin_info_total,bin_info)
     # add values to our Results table
     #if (s==1){RESULTS_mean[s,]<-MEAN}else{RESULTS_mean<-rbind(RESULTS_mean, (MEAN))}
     RESULTS_mean<-rbind(RESULTS_mean, (MEAN))
@@ -74,5 +78,7 @@ for (n in 1:length(CHRnames)){
 
 #
 RESULTS_mean<-RESULTS_mean[-1,]
-
+bin_info_total<-bin_info_total[-1,]
 write.table(RESULTS_mean, "~/Documents/SmithLab/NAM/Analysis/SNPdensity_and_segDist/SegDist_091817/Output/88Fam_genmap_segDist_binned_AA.txt", quote=F,row.names=T,col.names=T,sep="\t")
+#write a table with the positions in bp cover by each windows (~200 windows per chromosome)
+write.table(bin_info_total, "~/Documents/SmithLab/NAM/Analysis/SNPdensity_and_segDist/SegDist_091817/Output/88Fam_genmap_segDist_binned_AA_BINinfo.txt", quote=F,row.names=T,col.names=T,sep="\t")

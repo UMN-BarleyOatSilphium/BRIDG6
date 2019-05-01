@@ -15,10 +15,10 @@ Polytest<-read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imput
 SNPnames<-read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Output/my_gwas_SNPs_out_80miss_BLUE.csv")
 
 # Order of family names
-Families<-read.csv("/Users/agonzale/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Input/phenos_LDKNNI.csv",sep=",")
+Families<-read.csv("~/Dropbox/SmithLab/NAM/Analysis/WholeNAM_80mis_6060ind/Imputed_Output/Filtered_maf_mis_LD/GWAS/forGWAS/LDKNNI/Input/phenos_LDKNNI.csv",sep=",")
 
 # Import parent names
-Parents_famNam<-read.table("/Users/agonzale/Documents/SmithLab/NAM/Data/Alex/Pop_structure_propDiss_JULY2016_parentLessMissingData_grep.txt",header=T)
+Parents_famNam<-read.table("~/Dropbox/SmithLab/NAM/Data/Alex/Pop_structure_propDiss_JULY2016_parentLessMissingData_grep.txt",header=T)
 
 # Sort by family_grep
 Parents_famNam_or<-Parents_famNam[order(Parents_famNam$Family_grep),]

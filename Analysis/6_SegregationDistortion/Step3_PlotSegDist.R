@@ -1,3 +1,5 @@
+#Step3_PlotSegDist.R
+
 # Author: Alex Ollhoff
 # Description: Plot Rasmusson contribution to homozygous genotypes
 ################################################################################################################
@@ -5,7 +7,7 @@ rm(list=ls())
 library(ggplot2)
 library(dplyr)
 library(reshape2)
-Seg_dist <- read.table("/Users/agonzale/Documents/SmithLab/NAM/Analysis/SNPdensity_and_segDist/SegDist_091817/Output/88Fam_genmap_segDist_binned_AA.txt", header = T)
+Seg_dist <- read.table("~/Documents/Manuscript/88Fam_genmap_segDist_binned_AA.txt", header = T)
 
 # Separate chromsome number from bin label
 Chrom_num <- gsub("_[0-9]*","", row.names(Seg_dist))
@@ -32,7 +34,7 @@ Melted_chrom$ID <- 1:nrow(Melted_chrom)
 
 # Sort and then group families by subpop
 # Import family information, with RILs and parents to know which color to paint them
-family_info <- read.csv("/Users/agonzale/Dropbox/GITHUB/BRIDG6/Datasets/Parents/NAM_parent_heading_nochecks_noduplicateparents.csv", header = T, na.strings = "NA")
+family_info <- read.csv("~/Documents/Manuscript/NAM_parent_heading_nochecks_noduplicateparents.csv", header = T, na.strings = "NA")
 
 # Separate family in populations
 Admix<-subset(family_info, family_info$Pop_location == "Admixed")
@@ -42,7 +44,7 @@ central_e<-subset(family_info, family_info$Pop_location == "Central European")
 east_af<-subset(family_info, family_info$Pop_location == "East African")
 unassigned<-subset(family_info, family_info$Pop_location == "Un")
 
-#get identifier for individuals in a family
+# Get identifier for individuals in a family
 List_indiv_admix<-c(as.character(Admix$Family), as.character(Admix$NAM_name))
 List_indiv_coastal_m <-c(as.character(coastal_m$Family), as.character(coastal_m$NAM_name))
 List_indiv_Asian <-c(as.character(Asian$Family), as.character(Asian$NAM_name))
@@ -103,19 +105,16 @@ Fam_seg_dist <- rbind(admixed_fams, asian_fams, coastalmed_fams, euro_fams, east
 #Fam_seg_dist$Pop_location_sort = factor(Fam_seg_dist$Pop_location, levels = c('Central European', 'Coastal Mediterranean', 'East African', 'Asian', 'Admixed', 'Un'))
 Fam_seg_dist$Pop_location_sort = factor(Fam_seg_dist$Pop_location, levels = c('C. European', 'Coastal Med.', 'E. African', 'Asian', 'Admixed', 'Un'))
 
-# Reorder parent data
-#family_info_sorted <- arrange(family_info, man_sort)
-
 # Reorder families within factor
-# Family_info should be sorted in the order you want to families in this case by man_sort
+# Family_info should be sorted in the order you want to families, in this case by man_sort
 Arranged_seg_dist <- Fam_seg_dist %>%
   mutate(variable = factor(variable, levels = family_info$NAM_name)) %>%
   arrange(variable)
 
 # Plot heat map of segregation distortion
-pdf("/Users/agonzale/Documents/SmithLab/NAM/write/Bridgs_edited_files_v2/Figures/Figure2_ParentalContributions.pdf",width=10,height=7)
+pdf("~/Documents/Manuscript/Figure2_ParentalContributions.pdf",width=10,height=7)
 ggplot(data = Arranged_seg_dist, aes(x = bin, y=factor(variable), fill=as.numeric(value))) +
-  labs(x = "Chromosome", y = "BRIDG Family") +
+  labs(x = "Chromosome", y = "BRIDG6 Family") +
   facet_grid( Pop_location_sort ~ chrom, scales = "free", space = "free", switch = "both") +
   #scale_fill_gradient2(high = "purple", low = "green", mid = "white", na.value = NA, midpoint = 0.50, guide = "colorbar", "Freuency of\nRasmusson Allele", limits = c(0.00, 1.00)) +
   scale_fill_distiller(palette = "PRGn", limits = c(0.00, 1.00), "Proportion\nRasmusson\nAllele", guide = "colorbar", labels = c("0.00", "0.25", "0.50", "0.75", "1.00"), na.value = "white") +
@@ -123,21 +122,21 @@ ggplot(data = Arranged_seg_dist, aes(x = bin, y=factor(variable), fill=as.numeri
         panel.grid = element_blank(), text = element_text(size = 16), legend.text = element_text(size = 14), legend.title = element_text(size = 14), legend.position = "right") +
   geom_tile() 
 dev.off()
-# Export as device size landscape 7x12 Manuscripts/Figures/Seg_dist_bypopthenpheno
+
 ###########
-#visualize one chromosome for one population at the time
+# Visualize one chromosome for one population at a time
 CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "5H" & Arranged_seg_dist$Pop_location == "Coastal Med."  )
 #CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "3H" & Arranged_seg_dist$Pop_location == "E. African" )
 #CHR5_OUTLIERS<-which(Arranged_seg_dist$chrom == "1H" )
 SEG_SEGMENTS<-Arranged_seg_dist[CHR5_OUTLIERS,]
 
 
-# get the unmelted data and visualize it in excell
+# Get the unmelted data and visualize it in excel
 Seg_dist_chr5<-Seg_dist[grep("CHR5",row.names(Seg_dist)),]
 write.table(Seg_dist_chr5,"~/Desktop/Seg_dist_chr3_eafric.xls",quote=F,row.names=T,col.names=T,sep="\t")
 
 HR645S<-SEG_SEGMENTS[which(SEG_SEGMENTS$variable == "HR645S"),]
-# get only segments 
+# Get only segments 
 ggplot(data = SEG_SEGMENTS, aes(x = bin, y=factor(variable), fill=as.numeric(value))) +
   labs(x = "Chromosome", y = "BRIDG Family") +
   facet_grid( Pop_location_sort ~ chrom, scales = "free", space = "free", switch = "both") +
