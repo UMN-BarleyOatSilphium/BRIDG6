@@ -172,8 +172,9 @@ for (i in 1:AvePoints){
 
 #pdf("~/Desktop/LD_bridgParents.pdf",width=7,height=5)
 pdf("~/Dropbox/SmithLab/NAM/Analysis/LD_BRIDG6parents/inputPlink_parentGWAS/Plot/LD_bridgParents_noThin_snpGWAS_maf3.pdf",width=7,height=5)
+par(mar=c(4,5,1,4))
 
-plot(LDresults[,1]/1000000,LDresults[,2],cex=0.2,col="light gray",xlab="Distance (Mbp)",ylab="r^2")
+plot(LDresults[,1]/1000000,LDresults[,2],cex=0.2,col="light gray",xlab="Distance (Mbp)",ylab= expression(paste("LD (r"^"2",")")))
 
 points(Average[,1],Average[,2],cex=0.2,col="red")
 lines(Average[,1],Average[,2],col="red")
